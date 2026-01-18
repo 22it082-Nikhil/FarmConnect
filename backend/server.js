@@ -24,17 +24,20 @@ const cropRoutes = require('./routes/crops');
 const serviceRequestRoutes = require('./routes/serviceRequests');
 const rentalRoutes = require('./routes/rentals');
 const offerRoutes = require('./routes/offers');
-const providerServiceRoutes = require('./routes/providerServices'); // New Route
+const providerServiceRoutes = require('./routes/providerServices');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/crops', cropRoutes);
 app.use('/api/service-requests', serviceRequestRoutes);
 app.use('/api/rentals', rentalRoutes);
 app.use('/api/offers', offerRoutes);
-app.use('/api/rentals', rentalRoutes);
-app.use('/api/offers', offerRoutes);
 app.use('/api/provider-services', providerServiceRoutes);
-app.use('/api/users', require('./routes/users')); // New Users Route
+app.use('/api/users', require('./routes/users'));
 
+// Server listening logic for local dev vs Vercel
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module) {
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;
