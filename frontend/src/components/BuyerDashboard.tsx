@@ -245,7 +245,7 @@ const BuyerDashboard = () => {
 
   const fetchCrops = async () => {
     try {
-      const response = await fetch('${API_URL}/api/crops')
+      const response = await fetch(`${API_URL}/api/crops`)
       if (response.ok) {
         const data = await response.json()
         setCrops(data)
@@ -273,7 +273,7 @@ const BuyerDashboard = () => {
     if (!user || !selectedCrop) return
 
     try {
-      const response = await fetch('${API_URL}/api/offers', {
+      const response = await fetch(`${API_URL}/api/offers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
