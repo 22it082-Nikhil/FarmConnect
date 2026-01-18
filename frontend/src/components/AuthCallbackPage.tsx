@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import API_URL from '../config'
 
 const AuthCallbackPage = () => {
     const { user, isLoaded } = useUser()
@@ -25,7 +26,7 @@ const AuthCallbackPage = () => {
                     console.log("Syncing user to backend...", userData)
 
                     // Call your backend to sync/create user
-                    const res = await fetch('http://127.0.0.1:5001/api/auth/sync', {
+                    const res = await fetch(`${API_URL}/api/auth/sync`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
