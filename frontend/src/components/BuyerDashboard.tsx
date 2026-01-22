@@ -931,7 +931,8 @@ const BuyerDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+      {/* Desktop View - Table */}
+      <div className="hidden md:block bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h3 className="font-semibold text-gray-900">Recent Transactions</h3>
           <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{myOrders.length} Records</span>
@@ -971,6 +972,48 @@ const BuyerDashboard = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile View - Cards */}
+      <div className="md:hidden space-y-4">
+        <div className="flex justify-between items-center px-1">
+          <h3 className="font-semibold text-gray-900">Recent Transactions</h3>
+          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{myOrders.length} Records</span>
+        </div>
+        {myOrders.length === 0 ? (
+          <div className="bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100 shadow-sm">
+            No transactions found.
+          </div>
+        ) : (
+          myOrders.slice(0, 10).map((order) => (
+            <div key={order._id} className="bg-white rounded-xl p-5 shadow-md border border-gray-100">
+              {/* Header: Crop & Date */}
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-bold text-gray-900">{order.crop?.name || 'Unknown Crop'}</h4>
+                  <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${order.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                    order.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                  }`}>
+                  {order.status}
+                </span>
+              </div>
+
+              <div className="border-t border-b border-gray-50 py-3 my-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Farmer:</span>
+                  <span className="font-medium text-gray-900">{order.farmer?.name || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Amount:</span>
+                  <span className="font-bold text-green-600 text-lg">{order.bidAmount}</span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
