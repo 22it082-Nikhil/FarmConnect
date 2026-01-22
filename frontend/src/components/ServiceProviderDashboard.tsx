@@ -1525,7 +1525,7 @@ const ServiceProviderDashboard = () => {
       </nav>
 
       <div className="flex min-h-[calc(100vh-4rem)] print:hidden">
-        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}>
           <div className="h-full flex flex-col">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
