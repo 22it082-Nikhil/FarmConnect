@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo } from 'react' // For managing component s
 import { useClerk } from '@clerk/clerk-react'
 import {
   // Navigation and UI icons
-  ShoppingCart, Users, BarChart3, Calendar, MapPin, IndianRupee,
-  TrendingUp, AlertCircle, CheckCircle, Clock, Star, Settings, LogOut, Plus,
-  Search, Filter, Eye, MessageSquare, FileText, Download, Upload, Crop,
-  Warehouse, Car, UserCheck, Bell, Home, Menu, User, Shield, Heart,
-  Package, Truck, CreditCard, Award, TrendingDown, Trash, FileSpreadsheet
+  ShoppingCart, BarChart3, IndianRupee,
+  TrendingUp, CheckCircle, Clock, LogOut,
+  Search, FileText, Crop,
+  Package, Bell, Home, Menu, User, Shield, Heart,
+  MapPin, UserCheck, Trash
 } from 'lucide-react' // Icon library for consistent UI elements
 import API_URL from '../config'
 
@@ -1017,8 +1017,8 @@ const BuyerDashboard = () => {
               <div className="flex items-center justify-between pt-1">
                 <span className="text-sm text-gray-500">Status:</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${order.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                    order.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
+                  order.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
                   }`}>
                   {order.status}
                 </span>
