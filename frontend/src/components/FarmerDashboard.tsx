@@ -2243,7 +2243,7 @@ const FarmerDashboard = () => {
               </button>
               <div className="flex items-center -ml-3 md:ml-0">
                 <img src="/logo.png" alt="FarmConnect Logo" className="w-10 h-10 -mr-1 md:w-14 md:h-14 md:-mr-2 -mt-1 md:-mt-1.5 rounded-lg object-contain" />
-                <span className="text-lg md:text-2xl font-bold text-gray-900">FarmConnect</span>
+                <span className="hidden sm:block text-xl md:text-2xl font-bold text-gray-900">FarmConnect</span>
               </div>
             </div>
 
