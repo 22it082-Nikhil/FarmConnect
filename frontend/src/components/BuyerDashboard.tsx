@@ -8,8 +8,9 @@ import {
   TrendingUp, CheckCircle, Clock, LogOut,
   Search, FileText, Crop,
   Package, Bell, Home, Menu, User, Shield, Heart,
-  MapPin, UserCheck, Trash
+  MapPin, UserCheck, Trash, MessageSquare
 } from 'lucide-react' // Icon library for consistent UI elements
+import ChatSystem from './ChatSystem'
 import API_URL from '../config'
 
 // Main Buyer Dashboard Component - Provides comprehensive interface for crop buyers
@@ -302,6 +303,25 @@ const BuyerDashboard = () => {
   }
 
   // Renders the main overview section with dashboard statistics and key information
+  // Renders the main overview section with dashboard statistics and key information
+  const renderChat = () => (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-8 text-white shadow-lg"
+      >
+        <h2 className="text-3xl font-bold mb-2 flex items-center">
+          <MessageSquare className="w-8 h-8 mr-3" />
+          Messages 💬
+        </h2>
+        <p className="text-orange-100 text-lg">Chat with farmers regarding your bids.</p>
+      </motion.div>
+
+      <ChatSystem currentUser={user} role="buyer" />
+    </div>
+  );
+
   const renderOverview = () => (
     <div className="space-y-6">
       {/* Welcome Section - Hero banner with greeting and current date */}
@@ -1287,6 +1307,7 @@ const BuyerDashboard = () => {
                   { id: 'orders', name: 'My Orders', icon: <Package className="w-5 h-5" /> }, // Order management
                   { id: 'saved', name: 'Saved Items', icon: <Heart className="w-5 h-5" /> }, // Wishlist
                   { id: 'reports', name: 'Reports', icon: <BarChart3 className="w-5 h-5" /> }, // Analytics
+                  { id: 'chat', name: 'Chats', icon: <MessageSquare className="w-5 h-5" /> }, // Chats
                   { id: 'profile', name: 'Profile', icon: <User className="w-5 h-5" /> } // User profile
                 ].map((item) => ( // Maps through navigation items to create menu buttons
                   <button

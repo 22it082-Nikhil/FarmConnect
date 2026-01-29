@@ -4,103 +4,129 @@ const Message = require('../models/Message');
 const Offer = require('../models/Offer');
 const User = require('../models/User');
 
-// --- Helper Functions ---
+// Middleware to get user from clerkId (simplified for now, assuming frontend sends clerkId in headers or body effectively, 
+// strictly speaking we should use the existing auth logic if available, but for now I'll lookup user by clerkId passed in headers)
+// In previous tasks we might have established a pattern. Let's assume the frontend will send `x-clerk-user-id`.
+const getUser = async (req, res, next) => {
+    const clerkId = req.headers['x-clerk-user-id'];
+    if (!clerkId) return res.status(401).json({ message: 'Unauthorized' });
 
-// Get unique conversation ID between two users
-const getConversationId = (user1, user2) => {
-    return [user1, user2].sort().join('-');
+    try {
+        const user = await User.findOne({ clerkId });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        req.user = user;
+        next();
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
 };
 
-// --- Routes ---
-
-// @route   GET /api/chat/contacts
-// @desc    Get list of users the current user can chat with (based on Offers)
-// @access  Public (in this simplified version, realistically Protected)
-router.get('/contacts/:userId', async (req, res) => {
+// GET /api/chat/contacts - Get list of users to chat with (based on Bids/Offers)
+router.get('/contacts', getUser, async (req, res) => {
     try {
-        const { userId } = req.params;
-        const { role } = req.query; // 'farmer' or 'buyer'
+        const userId = req.user._id;
+        const userRole = req.user.role;
 
-        if (!userId) return res.status(400).json({ error: 'User ID required' });
+        let contacts = [];
+        let contactIds = new Set();
 
-        let contactIds = [];
-
-        if (role === 'farmer') {
-            // Find offers where I am the farmer
-            // We want to chat with the BUYER of those offers
-            const offers = await Offer.find({ farmer: userId }).select('buyer');
-            contactIds = offers.map(o => o.buyer?.toString()).filter(id => id); // Filter nulls
-        } else if (role === 'buyer') {
-            // Find offers where I am the buyer
-            // We want to chat with the FARMER of those offers
-            const offers = await Offer.find({ buyer: userId }).select('farmer');
-            contactIds = offers.map(o => o.farmer?.toString()).filter(id => id);
-        } else {
-            return res.status(400).json({ error: 'Invalid role' });
+        // If Farmer: Find Buyers who have active offers with this farmer
+        if (userRole === 'farmer') {
+            const offers = await Offer.find({ farmer: userId }).populate('buyer', 'name email _id');
+            offers.forEach(offer => {
+                if (offer.buyer && !contactIds.has(offer.buyer._id.toString())) {
+                    contactIds.add(offer.buyer._id.toString());
+                    contacts.push(offer.buyer);
+                }
+            });
+        }
+        // If Buyer: Find Farmers who have bid on my crops (Offers where buyer is me)
+        else if (userRole === 'buyer') {
+            const offers = await Offer.find({ buyer: userId }).populate('farmer', 'name email _id');
+            offers.forEach(offer => {
+                if (offer.farmer && !contactIds.has(offer.farmer._id.toString())) {
+                    contactIds.add(offer.farmer._id.toString());
+                    contacts.push(offer.farmer);
+                }
+            });
         }
 
-        // De-duplicate IDs
-        const uniqueContactIds = [...new Set(contactIds)];
+        // Add last message info for UI polish (optional but good)
+        const contactsWithMeta = await Promise.all(contacts.map(async (contact) => {
+            const lastMsg = await Message.findOne({
+                $or: [
+                    { sender: userId, receiver: contact._id },
+                    { sender: contact._id, receiver: userId }
+                ]
+            }).sort({ createdAt: -1 });
 
-        // Fetch User details for these contacts
-        const contacts = await User.find({ _id: { $in: uniqueContactIds } })
-            .select('name email role location phone'); // Select fields to display in sidebar
+            // Count unread
+            const unreadCount = await Message.countDocuments({
+                sender: contact._id,
+                receiver: userId,
+                read: false
+            });
 
-        res.json(contacts);
-    } catch (err) {
-        console.error('Error fetching contacts:', err);
-        res.status(500).json({ error: 'Server error' });
+            return {
+                _id: contact._id,
+                name: contact.name,
+                email: contact.email,
+                lastMessage: lastMsg ? lastMsg.content : null,
+                lastMessageTime: lastMsg ? lastMsg.createdAt : null,
+                unreadCount
+            };
+        }));
+
+        res.json(contactsWithMeta);
+    } catch (error) {
+        console.error('Error fetching contacts:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
-// @route   GET /api/chat/history/:userId/:otherUserId
-// @desc    Get chat history between two users
-router.get('/history/:userId/:otherUserId', async (req, res) => {
+// GET /api/chat/messages/:contactId - Get conversation
+router.get('/messages/:contactId', getUser, async (req, res) => {
     try {
-        const { userId, otherUserId } = req.params;
+        const userId = req.user._id;
+        const contactId = req.params.contactId;
 
-        // Find messages where (sender=me AND receiver=other) OR (sender=other AND receiver=me)
         const messages = await Message.find({
             $or: [
-                { sender: userId, receiver: otherUserId },
-                { sender: otherUserId, receiver: userId }
+                { sender: userId, receiver: contactId },
+                { sender: contactId, receiver: userId }
             ]
-        })
-            .sort({ createdAt: 1 }); // Oldest first
+        }).sort({ createdAt: 1 });
+
+        // Mark as read
+        await Message.updateMany(
+            { sender: contactId, receiver: userId, read: false },
+            { read: true }
+        );
 
         res.json(messages);
-    } catch (err) {
-        console.error('Error fetching history:', err);
-        res.status(500).json({ error: 'Server error' });
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
-// @route   POST /api/chat/send
-// @desc    Send a new message
-router.post('/send', async (req, res) => {
+// POST /api/chat/messages - Send a message
+router.post('/messages', getUser, async (req, res) => {
     try {
-        const { senderId, receiverId, message, offerId } = req.body;
-
-        if (!senderId || !receiverId || !message) {
-            return res.status(400).json({ error: 'Missing fields' });
-        }
-
-        const conversationId = getConversationId(senderId, receiverId);
+        const { receiverId, content } = req.body;
+        const senderId = req.user._id;
 
         const newMessage = new Message({
             sender: senderId,
             receiver: receiverId,
-            conversationId,
-            message,
-            offerContext: offerId || null
+            content
         });
 
-        await newMessage.save();
-
-        res.json(newMessage);
-    } catch (err) {
-        console.error('Error sending message:', err);
-        res.status(500).json({ error: 'Server error' });
+        const savedMessage = await newMessage.save();
+        res.status(201).json(savedMessage);
+    } catch (error) {
+        console.error('Error sending message:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
