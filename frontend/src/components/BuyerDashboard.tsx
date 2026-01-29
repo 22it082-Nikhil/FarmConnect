@@ -1058,6 +1058,7 @@ const BuyerDashboard = () => {
       case 'orders': return renderOrders() // Shows buyer's current and past orders
       case 'saved': return renderSaved() // Shows saved crops in wishlist
       case 'reports': return renderReports() // Shows financial reports
+      case 'chat': return renderChat() // Shows chat system
       case 'profile': return renderProfile() // Shows user profile
       default: return renderOverview() // Default to overview if no tab is selected
     }
