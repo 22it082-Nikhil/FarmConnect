@@ -26,6 +26,7 @@ router.get('/contacts', getUser, async (req, res) => {
     try {
         const userId = req.user._id;
         const userRole = req.user.role;
+        console.log(`[Chat] Fetching contacts for User: ${userId}, Role: ${userRole}`);
 
         let contacts = [];
         let contactIds = new Set();
@@ -33,6 +34,7 @@ router.get('/contacts', getUser, async (req, res) => {
         // If Farmer: Find Buyers who have active offers with this farmer
         if (userRole === 'farmer') {
             const offers = await Offer.find({ farmer: userId }).populate('buyer', 'name email _id');
+            console.log(`[Chat] Found ${offers.length} offers for farmer`);
             offers.forEach(offer => {
                 if (offer.buyer && !contactIds.has(offer.buyer._id.toString())) {
                     contactIds.add(offer.buyer._id.toString());
@@ -43,6 +45,7 @@ router.get('/contacts', getUser, async (req, res) => {
         // If Buyer: Find Farmers who have bid on my crops (Offers where buyer is me)
         else if (userRole === 'buyer') {
             const offers = await Offer.find({ buyer: userId }).populate('farmer', 'name email _id');
+            console.log(`[Chat] Found ${offers.length} offers for buyer`);
             offers.forEach(offer => {
                 if (offer.farmer && !contactIds.has(offer.farmer._id.toString())) {
                     contactIds.add(offer.farmer._id.toString());
@@ -50,6 +53,8 @@ router.get('/contacts', getUser, async (req, res) => {
                 }
             });
         }
+
+        console.log(`[Chat] Found ${contacts.length} unique contacts`);
 
         // Add last message info for UI polish (optional but good)
         const contactsWithMeta = await Promise.all(contacts.map(async (contact) => {
