@@ -2246,6 +2246,7 @@ const FarmerDashboard = () => {
       case 'rentals': return renderRentals()
       case 'offers': return renderOffers()
       case 'reports': return renderReports()
+      case 'chat': return renderChat()
       case 'profile': return renderProfile()
       default: return renderOverview()
     }
