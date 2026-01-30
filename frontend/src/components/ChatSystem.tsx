@@ -289,8 +289,8 @@ const ChatSystem: React.FC<ChatSystemProps> = ({ currentUser, role }) => {
                                     <div key={index} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                         <div
                                             className={`max-w-[75%] p-3 rounded-2xl text-sm ${isMe
-                                                    ? 'bg-green-600 text-white rounded-tr-none'
-                                                    : 'bg-white text-gray-800 shadow-sm rounded-tl-none'
+                                                ? 'bg-green-600 text-white rounded-tr-none'
+                                                : 'bg-white text-gray-800 shadow-sm rounded-tl-none'
                                                 }`}
                                         >
                                             <p>{msg.content}</p>
@@ -394,7 +394,7 @@ const ChatSystem: React.FC<ChatSystemProps> = ({ currentUser, role }) => {
                                 <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium mr-2">
                                     Bid: {selectedChat.offer?.crop?.name}
                                 </span>
-                                Price: {selectedChat.offer?.pricePerUnit}/unit
+                                Price: ₹{selectedChat.offer?.pricePerUnit}/unit
                             </div>
                         </div>
                         <div className="relative">
@@ -453,8 +453,8 @@ const ChatSystem: React.FC<ChatSystemProps> = ({ currentUser, role }) => {
                                 <div key={index} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                     <div
                                         className={`max-w-[70%] p-4 rounded-2xl shadow-sm text-sm ${isMe
-                                                ? 'bg-green-600 text-white rounded-tr-none'
-                                                : 'bg-white text-gray-800 rounded-tl-none'
+                                            ? 'bg-green-600 text-white rounded-tr-none'
+                                            : 'bg-white text-gray-800 rounded-tl-none'
                                             }`}
                                     >
                                         <p>{msg.content}</p>
