@@ -282,7 +282,27 @@ const BuyerDashboard = () => {
     if (!selectedCrop) return
 
     try {
-      const farmerId = typeof selectedCrop.farmer === 'object' ? selectedCrop.farmer._id : selectedCrop.farmer;
+      console.log("Submitting bid for crop:", selectedCrop);
+      if (!selectedCrop) {
+        alert("Error: No crop details found.");
+        return;
+      }
+
+      let farmerId;
+      if (typeof selectedCrop.farmer === 'object' && selectedCrop.farmer !== null) {
+        // It's an object populated by backend
+        farmerId = (selectedCrop.farmer as any)._id;
+      } else {
+        // It's a string ID
+        farmerId = selectedCrop.farmer;
+      }
+
+      console.log("Extracted farmerId:", farmerId);
+
+      if (!farmerId) {
+        alert("Error: Vital farmer information is missing from this crop listing.");
+        return;
+      }
 
       const response = await fetch(`${API_URL}/api/offers`, {
         method: 'POST',
