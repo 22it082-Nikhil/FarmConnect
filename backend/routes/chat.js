@@ -41,22 +41,40 @@ router.post('/create', async (req, res) => {
             return res.status(400).json({ message: 'Offer ID and User ID are required' });
         }
 
+        // First, try to find an offer with this ID
+        let offer = await Offer.findById(offerId);
+
+        // If no offer found, it might be a service request ID
+        // Try to find an offer by serviceRequest ID
+        if (!offer) {
+            offer = await Offer.findOne({ serviceRequest: offerId });
+        }
+
+        if (!offer) {
+            return res.status(404).json({ message: 'Offer not found for this request' });
+        }
+
         // Check if chat already exists for this offer
-        let chat = await Chat.findOne({ offer: offerId });
+        let chat = await Chat.findOne({ offer: offer._id });
 
         if (chat) {
             return res.json(chat);
         }
 
-        const offer = await Offer.findById(offerId);
-        if (!offer) {
-            return res.status(404).json({ message: 'Offer not found' });
+        // Determine participants based on offer type
+        let participants = [];
+        if (offer.offerType === 'service') {
+            // Service offer: farmer and provider
+            participants = [offer.farmer, offer.provider];
+        } else {
+            // Crop offer: farmer and buyer
+            participants = [offer.farmer, offer.buyer || currentUserId];
         }
 
         // Create new chat
         chat = new Chat({
-            offer: offerId,
-            participants: [offer.farmer, offer.buyer || currentUserId], // Ensure both participants are added
+            offer: offer._id,
+            participants: participants,
             lastMessage: 'Chat started'
         });
 
