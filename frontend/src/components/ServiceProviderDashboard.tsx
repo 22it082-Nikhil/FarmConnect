@@ -380,10 +380,6 @@ const ServiceProviderDashboard = () => {
 
       if (res.ok) {
         setActiveTab('chats');
-        // Small delay to ensure the ChatSystem component mounts and fetches
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
       } else {
         const errorData = await res.json();
         alert(`Failed to start chat: ${errorData.message || 'Unknown error'}`);
