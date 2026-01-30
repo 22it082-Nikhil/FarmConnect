@@ -26,7 +26,7 @@ router.get('/contacts', getUser, async (req, res) => {
     try {
         const userId = req.user._id;
         const userRole = req.user.role.toLowerCase();
-        console.log(`[Chat] Fetching contacts for User: ${userId}, Role: ${userRole}`);
+        console.log(`[Chat] Fetching contacts for UserID: ${userId} (${typeof userId})`);
 
         // Unified Logic: Find ALL offers where this user is involved (as Farmer, Buyer, or Provider)
         // This decouples chat from the static 'role' field and bases it on actual interactions.

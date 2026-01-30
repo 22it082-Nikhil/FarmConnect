@@ -271,7 +271,15 @@ const BuyerDashboard = () => {
 
   const handleSubmitBid = async (e: any) => {
     e.preventDefault()
-    if (!user || !selectedCrop) return
+    if (!user) {
+      alert("User not logged in");
+      return;
+    }
+    if (!user._id) {
+      alert("Error: User session invalid. Please Logout and Login again.");
+      return;
+    }
+    if (!selectedCrop) return
 
     try {
       const response = await fetch(`${API_URL}/api/offers`, {
