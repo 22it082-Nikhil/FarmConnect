@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react' // For managing component state
 import { useClerk } from '@clerk/clerk-react'
 import {
   // Navigation and UI icons for farmer dashboard
-  Leaf, Truck, Users, ShoppingCart, BarChart3, MapPin, IndianRupee,
+  Leaf, Truck, Users, ShoppingCart, BarChart3, MapPin, IndianRupee, MessageSquare,
   Settings, LogOut, Plus, FileText, Download,
   Bell, Menu, User, TrendingUp, TrendingDown,
   CheckCircle, AlertCircle, Trash,
-  ArrowRight, Cloud, Sun, Warehouse, UserCheck, Home, Shield, Wrench, Star, Clock, Crop, MessageSquare
+  ArrowRight, Cloud, Sun, Warehouse, UserCheck, Home, Shield, Wrench, Star, Clock, Crop
 } from 'lucide-react' // Icon library for consistent UI elements
-import ChatSystem from './ChatSystem'
 import API_URL from '../config'
+import ChatSystem from './ChatSystem'
 
 // Main Farmer Dashboard Component - Provides comprehensive interface for crop farmers
 const FarmerDashboard = () => {
@@ -616,27 +616,6 @@ const FarmerDashboard = () => {
   )
 
   // Renders the main overview section with dashboard statistics and key information
-  const renderChat = () => (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white shadow-lg"
-      >
-        <h2 className="text-3xl font-bold mb-2 flex items-center">
-          <MessageSquare className="w-8 h-8 mr-3" />
-          Messages 💬
-        </h2>
-        <p className="text-green-100 text-lg">Chat with buyers who have bid on your crops.</p>
-      </motion.div>
-
-      <ChatSystem currentUser={user} role="farmer" />
-    </div>
-  );
-
-  // Renders the main overview section with dashboard statistics and key information
-
-
   const renderOverview = () => (
     <div className="space-y-6">
       {/* Welcome Section - Hero banner with greeting and current date */}
@@ -2246,7 +2225,6 @@ const FarmerDashboard = () => {
       case 'rentals': return renderRentals()
       case 'offers': return renderOffers()
       case 'reports': return renderReports()
-      case 'chat': return renderChat()
       case 'profile': return renderProfile()
       default: return renderOverview()
     }
@@ -2323,7 +2301,6 @@ const FarmerDashboard = () => {
                   { id: 'available_services', name: 'Service Available', icon: <Wrench className="w-5 h-5" /> },
                   { id: 'rentals', name: 'My Rentals', icon: <ShoppingCart className="w-5 h-5" /> },
                   { id: 'reports', name: 'Reports', icon: <BarChart3 className="w-5 h-5" /> },
-                  { id: 'chat', name: 'Chats', icon: <MessageSquare className="w-5 h-5" /> }, // New Chat Tab
                   { id: 'profile', name: 'Profile', icon: <User className="w-5 h-5" /> }
                 ].map((item) => (
                   <button

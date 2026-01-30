@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 
-const MessageSchema = new mongoose.Schema({
-    sender: {
+const messageSchema = new mongoose.Schema({
+    chat: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Chat',
         required: true
     },
-    receiver: {
+    sender: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -15,14 +15,14 @@ const MessageSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    read: {
-        type: Boolean,
-        default: false
-    },
+    readBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
 
-module.exports = mongoose.model('Message', MessageSchema);
+module.exports = mongoose.model('Message', messageSchema);

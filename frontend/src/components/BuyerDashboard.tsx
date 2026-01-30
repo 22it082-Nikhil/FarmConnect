@@ -10,8 +10,8 @@ import {
   Package, Bell, Home, Menu, User, Shield, Heart,
   MapPin, UserCheck, Trash, MessageSquare
 } from 'lucide-react' // Icon library for consistent UI elements
-import ChatSystem from './ChatSystem'
 import API_URL from '../config'
+import ChatSystem from './ChatSystem'
 
 // Main Buyer Dashboard Component - Provides comprehensive interface for crop buyers
 const BuyerDashboard = () => {
@@ -271,48 +271,15 @@ const BuyerDashboard = () => {
 
   const handleSubmitBid = async (e: any) => {
     e.preventDefault()
-    if (!user) {
-      alert("User not logged in");
-      return;
-    }
-    if (!user._id) {
-      alert("Error: User session invalid. Please Logout and Login again.");
-      return;
-    }
-    if (!selectedCrop) return
+    if (!user || !selectedCrop) return
 
     try {
-      console.log("Submitting bid for crop:", selectedCrop);
-      if (!selectedCrop) {
-        alert("Error: No crop details found.");
-        return;
-      }
-
-      let farmerId;
-      if (typeof selectedCrop.farmer === 'object' && selectedCrop.farmer !== null) {
-        // It's an object populated by backend
-        farmerId = (selectedCrop.farmer as any)._id;
-      } else {
-        // It's a string ID
-        farmerId = selectedCrop.farmer;
-      }
-
-      console.log("Extracted farmerId:", farmerId);
-
-      if (!farmerId) {
-        alert("Error: Vital farmer information is missing from this crop listing.");
-        return;
-      }
-
       const response = await fetch(`${API_URL}/api/offers`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-clerk-user-id': user.clerkId
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           offerType: 'crop',
-          farmer: farmerId,
+          farmer: selectedCrop.farmer,
           buyer: user._id,
           buyerName: user.name,
           crop: selectedCrop._id,
@@ -336,25 +303,6 @@ const BuyerDashboard = () => {
   }
 
   // Renders the main overview section with dashboard statistics and key information
-  // Renders the main overview section with dashboard statistics and key information
-  const renderChat = () => (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-8 text-white shadow-lg"
-      >
-        <h2 className="text-3xl font-bold mb-2 flex items-center">
-          <MessageSquare className="w-8 h-8 mr-3" />
-          Messages 💬
-        </h2>
-        <p className="text-orange-100 text-lg">Chat with farmers regarding your bids.</p>
-      </motion.div>
-
-      <ChatSystem currentUser={user} role="buyer" />
-    </div>
-  );
-
   const renderOverview = () => (
     <div className="space-y-6">
       {/* Welcome Section - Hero banner with greeting and current date */}
@@ -1091,7 +1039,6 @@ const BuyerDashboard = () => {
       case 'orders': return renderOrders() // Shows buyer's current and past orders
       case 'saved': return renderSaved() // Shows saved crops in wishlist
       case 'reports': return renderReports() // Shows financial reports
-      case 'chat': return renderChat() // Shows chat system
       case 'profile': return renderProfile() // Shows user profile
       default: return renderOverview() // Default to overview if no tab is selected
     }
@@ -1341,7 +1288,7 @@ const BuyerDashboard = () => {
                   { id: 'orders', name: 'My Orders', icon: <Package className="w-5 h-5" /> }, // Order management
                   { id: 'saved', name: 'Saved Items', icon: <Heart className="w-5 h-5" /> }, // Wishlist
                   { id: 'reports', name: 'Reports', icon: <BarChart3 className="w-5 h-5" /> }, // Analytics
-                  { id: 'chat', name: 'Chats', icon: <MessageSquare className="w-5 h-5" /> }, // Chats
+                  { id: 'chats', name: 'Messages', icon: <MessageSquare className="w-5 h-5" /> }, // Chat System
                   { id: 'profile', name: 'Profile', icon: <User className="w-5 h-5" /> } // User profile
                 ].map((item) => ( // Maps through navigation items to create menu buttons
                   <button
@@ -1373,7 +1320,11 @@ const BuyerDashboard = () => {
 
         <div className="flex-1 lg:ml-0">
           <main className="py-6 px-4 sm:px-6 lg:px-8">
-            {renderContent()}
+            {activeTab === 'chats' ? (
+              <ChatSystem currentUser={{ id: user?._id, name: user?.name }} role="buyer" />
+            ) : (
+              renderContent()
+            )}
           </main>
         </div>
       </div >

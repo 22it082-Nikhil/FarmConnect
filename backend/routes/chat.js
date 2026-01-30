@@ -1,160 +1,114 @@
 const express = require('express');
 const router = express.Router();
+const Chat = require('../models/Chat');
 const Message = require('../models/Message');
 const Offer = require('../models/Offer');
 const User = require('../models/User');
 
-// Middleware to get user from clerkId (simplified for now, assuming frontend sends clerkId in headers or body effectively, 
-// strictly speaking we should use the existing auth logic if available, but for now I'll lookup user by clerkId passed in headers)
-// In previous tasks we might have established a pattern. Let's assume the frontend will send `x-clerk-user-id`.
-const getUser = async (req, res, next) => {
-    const clerkId = req.headers['x-clerk-user-id'];
-    if (!clerkId) return res.status(401).json({ message: 'Unauthorized' });
-
+// GET /api/chats - Get all chats for the current user
+router.get('/', async (req, res) => {
     try {
-        const user = await User.findOne({ clerkId });
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        req.user = user;
-        next();
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
+        const { userId } = req.query; // Assuming userId is passed as query param for simplicity (or via auth middleware)
 
-// GET /api/chat/contacts - Get list of users to chat with (based on Bids/Offers)
-router.get('/contacts', getUser, async (req, res) => {
-    try {
-        const userId = req.user._id;
-        const userRole = req.user.role.toLowerCase();
-        console.log(`[Chat] Fetching contacts for UserID: ${userId} (${typeof userId})`);
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
 
-        // Unified Logic: Find ALL offers where this user is involved (as Farmer, Buyer, or Provider)
-        // This decouples chat from the static 'role' field and bases it on actual interactions.
-        const offers = await Offer.find({
-            $or: [
-                { farmer: userId },
-                { buyer: userId },
-                { provider: userId }
-            ]
-        })
-            .populate('farmer', 'name email _id')
-            .populate('buyer', 'name email _id')
-            .populate('provider', 'name email _id');
+        const chats = await Chat.find({ participants: userId })
+            .populate('offer')
+            .populate('participants', 'name email')
+            .sort({ updatedAt: -1 });
 
-        console.log(`[Chat] Found ${offers.length} total interactions for User ${userId}`);
-
-        offers.forEach(offer => {
-            // Case 1: I am the Farmer
-            if (offer.farmer && offer.farmer._id.toString() === userId.toString()) {
-                // Add Buyer (if crop offer)
-                if (offer.buyer && !contactIds.has(offer.buyer._id.toString())) {
-                    contactIds.add(offer.buyer._id.toString());
-                    contacts.push(offer.buyer);
-                }
-                // Add Provider (if service offer)
-                if (offer.provider && !contactIds.has(offer.provider._id.toString())) {
-                    contactIds.add(offer.provider._id.toString());
-                    contacts.push(offer.provider);
-                }
-            }
-
-            // Case 2: I am the Buyer (bidding on crops)
-            if (offer.buyer && offer.buyer._id.toString() === userId.toString()) {
-                // Add Farmer
-                if (offer.farmer && !contactIds.has(offer.farmer._id.toString())) {
-                    contactIds.add(offer.farmer._id.toString());
-                    contacts.push(offer.farmer);
-                }
-            }
-
-            // Case 3: I am the Service Provider (bidding on requests)
-            if (offer.provider && offer.provider._id.toString() === userId.toString()) {
-                // Add Farmer (requester)
-                if (offer.farmer && !contactIds.has(offer.farmer._id.toString())) {
-                    contactIds.add(offer.farmer._id.toString());
-                    contacts.push(offer.farmer);
-                }
-            }
+        // Populate crop details inside offer
+        await Chat.populate(chats, {
+            path: 'offer.crop',
+            select: 'name price quantity'
         });
 
-        console.log(`[Chat] Found ${contacts.length} unique contacts`);
-
-        // Add last message info for UI polish (optional but good)
-        const contactsWithMeta = await Promise.all(contacts.map(async (contact) => {
-            const lastMsg = await Message.findOne({
-                $or: [
-                    { sender: userId, receiver: contact._id },
-                    { sender: contact._id, receiver: userId }
-                ]
-            }).sort({ createdAt: -1 });
-
-            // Count unread
-            const unreadCount = await Message.countDocuments({
-                sender: contact._id,
-                receiver: userId,
-                read: false
-            });
-
-            return {
-                _id: contact._id,
-                name: contact.name,
-                email: contact.email,
-                lastMessage: lastMsg ? lastMsg.content : null,
-                lastMessageTime: lastMsg ? lastMsg.createdAt : null,
-                unreadCount
-            };
-        }));
-
-        res.json(contactsWithMeta);
+        res.json(chats);
     } catch (error) {
-        console.error('Error fetching contacts:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error fetching chats:', error);
+        res.status(500).json({ message: 'Server error fetching chats' });
     }
 });
 
-// GET /api/chat/messages/:contactId - Get conversation
-router.get('/messages/:contactId', getUser, async (req, res) => {
+// POST /api/chats/create - Create or get existing chat for an offer
+router.post('/create', async (req, res) => {
     try {
-        const userId = req.user._id;
-        const contactId = req.params.contactId;
+        const { offerId, currentUserId } = req.body;
 
-        const messages = await Message.find({
-            $or: [
-                { sender: userId, receiver: contactId },
-                { sender: contactId, receiver: userId }
-            ]
-        }).sort({ createdAt: 1 });
+        if (!offerId || !currentUserId) {
+            return res.status(400).json({ message: 'Offer ID and User ID are required' });
+        }
 
-        // Mark as read
-        await Message.updateMany(
-            { sender: contactId, receiver: userId, read: false },
-            { read: true }
-        );
+        // Check if chat already exists for this offer
+        let chat = await Chat.findOne({ offer: offerId });
 
+        if (chat) {
+            return res.json(chat);
+        }
+
+        const offer = await Offer.findById(offerId);
+        if (!offer) {
+            return res.status(404).json({ message: 'Offer not found' });
+        }
+
+        // Create new chat
+        chat = new Chat({
+            offer: offerId,
+            participants: [offer.farmer, offer.buyer || currentUserId], // Ensure both participants are added
+            lastMessage: 'Chat started'
+        });
+
+        await chat.save();
+        res.status(201).json(chat);
+    } catch (error) {
+        console.error('Error creating chat:', error);
+        res.status(500).json({ message: 'Server error creating chat' });
+    }
+});
+
+// GET /api/chats/:chatId/messages - Get messages for a chat
+router.get('/:chatId/messages', async (req, res) => {
+    try {
+        const messages = await Message.find({ chat: req.params.chatId })
+            .sort({ createdAt: 1 })
+            .populate('sender', 'name');
         res.json(messages);
     } catch (error) {
         console.error('Error fetching messages:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error fetching messages' });
     }
 });
 
-// POST /api/chat/messages - Send a message
-router.post('/messages', getUser, async (req, res) => {
+// POST /api/chats/:chatId/messages - Send a message
+router.post('/:chatId/messages', async (req, res) => {
     try {
-        const { receiverId, content } = req.body;
-        const senderId = req.user._id;
+        const { senderId, content } = req.body;
+        const { chatId } = req.params;
 
-        const newMessage = new Message({
+        if (!content) {
+            return res.status(400).json({ message: 'Message content is required' });
+        }
+
+        const message = new Message({
+            chat: chatId,
             sender: senderId,
-            receiver: receiverId,
             content
         });
 
-        const savedMessage = await newMessage.save();
-        res.status(201).json(savedMessage);
+        await message.save();
+
+        // Update last message in Chat
+        await Chat.findByIdAndUpdate(chatId, {
+            lastMessage: content,
+            updatedAt: Date.now()
+        });
+
+        res.status(201).json(message);
     } catch (error) {
         console.error('Error sending message:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error sending message' });
     }
 });
 
