@@ -557,7 +557,23 @@ const BuyerDashboard = () => {
             >
               {/* Crop header with emoji icon, name, and farmer */}
               <div className="text-center mb-4">
-                <div className="text-4xl mb-2">{crop.image || '🌾'}</div> {/* Crop emoji icon */}
+                <div className="mb-2 flex justify-center">
+                  {crop.image && crop.image.startsWith('/') ? (
+                    <img
+                      src={`${API_URL}${crop.image}`}
+                      alt={crop.name}
+                      className="w-24 h-24 object-cover rounded-lg shadow-sm"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling!.classList.remove('hidden');
+                      }}
+                    />
+                  ) : (
+                    <div className="text-4xl">{crop.image || '🌾'}</div>
+                  )}
+                  {/* Fallback for error loading image */}
+                  <div className="hidden text-4xl">{crop.image || '🌾'}</div>
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900">{crop.name}</h3> {/* Crop name */}
                 <p className="text-sm text-gray-600">by {crop.farmer?.name || 'Unknown Farmer'}</p>
               </div>
@@ -752,7 +768,23 @@ const BuyerDashboard = () => {
             >
               {/* Saved crop header with emoji icon, name, and farmer */}
               <div className="text-center mb-4">
-                <div className="text-4xl mb-2">{crop.image || '🌾'}</div> {/* Crop emoji icon */}
+                <div className="mb-2 flex justify-center">
+                  {crop.image && crop.image.startsWith('/') ? (
+                    <img
+                      src={`${API_URL}${crop.image}`}
+                      alt={crop.name}
+                      className="w-24 h-24 object-cover rounded-lg shadow-sm"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling!.classList.remove('hidden');
+                      }}
+                    />
+                  ) : (
+                    <div className="text-4xl">{crop.image || '🌾'}</div>
+                  )}
+                  {/* Fallback for error loading image */}
+                  <div className="hidden text-4xl">{crop.image || '🌾'}</div>
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900">{crop.name}</h3> {/* Crop name */}
                 <p className="text-sm text-gray-600">by {crop.farmer?.name || 'Unknown Farmer'}</p> {/* Farmer name */}
               </div>

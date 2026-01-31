@@ -243,6 +243,50 @@ const FarmerDashboard = () => {
     { title: "Total Revenue", value: `₹${revenueStats.total.toLocaleString()}`, change: `+${revenueStats.trend}%`, icon: <IndianRupee className="w-6 h-6" />, color: "text-purple-600", bgColor: "bg-purple-100" } // Shows total earnings from crop sales
   ]
 
+  // Handle image file selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload image to server
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedImage) return null;
+
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('image', selectedImage);
+
+    try {
+      const res = await fetch(`${API_URL}/api/crops/upload-image`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return data.imageUrl;
+      } else {
+        alert('Failed to upload image');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image');
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setCropForm({ ...cropForm, [e.target.name]: e.target.value })
   }
@@ -250,15 +294,25 @@ const FarmerDashboard = () => {
   const handleSubmitCrop = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Upload image if selected
+      let imageUrl = cropForm.image;
+      if (selectedImage) {
+        const uploaded = await uploadImage();
+        if (uploaded) {
+          imageUrl = `${API_URL}${uploaded}`;
+        }
+      }
+
       const url = currentCrop
         ? `${API_URL}/api/crops/${currentCrop._id}`
         : `${API_URL}/api/crops`
 
       const method = currentCrop ? 'PUT' : 'POST'
 
+      const cropData = { ...cropForm, image: imageUrl };
       const body = currentCrop
-        ? JSON.stringify(cropForm)
-        : JSON.stringify({ ...cropForm, farmer: user._id })
+        ? JSON.stringify(cropData)
+        : JSON.stringify({ ...cropData, farmer: user._id })
 
       const res = await fetch(url, {
         method,
@@ -271,6 +325,8 @@ const FarmerDashboard = () => {
         fetchCrops()
         setCropForm({ name: '', quantity: '', price: '', image: '🌾', status: 'active' })
         setCurrentCrop(null)
+        setSelectedImage(null)
+        setImagePreview(null)
       }
     } catch (err) {
       console.error("Error saving crop", err)
@@ -280,6 +336,8 @@ const FarmerDashboard = () => {
   const openAddModal = () => {
     setCurrentCrop(null)
     setCropForm({ name: '', quantity: '', price: '', image: '🌾', status: 'active' })
+    setSelectedImage(null)
+    setImagePreview(null)
     setIsModalOpen(true)
   }
 
@@ -292,6 +350,8 @@ const FarmerDashboard = () => {
       image: crop.image,
       status: crop.status
     })
+    setSelectedImage(null)
+    setImagePreview(null)
     setIsModalOpen(true)
   }
 
@@ -1238,7 +1298,23 @@ const FarmerDashboard = () => {
             className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
           >
             <div className="text-center mb-4">
-              <div className="text-4xl mb-2">{crop.image}</div>
+              <div className="mb-2 flex justify-center">
+                {crop.image && crop.image.startsWith('/') ? (
+                  <img
+                    src={`${API_URL}${crop.image}`}
+                    alt={crop.name}
+                    className="w-24 h-24 object-cover rounded-lg shadow-sm"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling!.classList.remove('hidden');
+                    }}
+                  />
+                ) : (
+                  <div className="text-4xl">{crop.image}</div>
+                )}
+                {/* Fallback for error loading image */}
+                <div className="hidden text-4xl">{crop.image || '🌾'}</div>
+              </div>
               <h3 className="text-lg font-semibold text-gray-900">{crop.name}</h3>
             </div>
             <div className="space-y-2 mb-4">
@@ -1349,15 +1425,45 @@ const FarmerDashboard = () => {
                     <option value="sold">Sold</option>
                   </select>
                 </div>
+                {/* Image Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Icon (Emoji)</label>
-                  <input
-                    type="text"
-                    name="image"
-                    value={cropForm.image}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Crop Image</label>
+                  <div className="space-y-2">
+                    {/* Image Preview */}
+                    {(imagePreview || cropForm.image) && (
+                      <div className="flex justify-center">
+                        <div className="w-24 h-24 rounded-lg border-2 border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center">
+                          {imagePreview ? (
+                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                          ) : cropForm.image && !cropForm.image.startsWith('http') ? (
+                            <span className="text-4xl">{cropForm.image}</span>
+                          ) : cropForm.image ? (
+                            <img src={cropForm.image} alt="Crop" className="w-full h-full object-cover" />
+                          ) : null}
+                        </div>
+                      </div>
+                    )}
+                    {/* File Input */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"
+                    />
+                    <p className="text-xs text-gray-500">Upload an image or use emoji below (max 5MB)</p>
+                    {/* Emoji Fallback */}
+                    <input
+                      type="text"
+                      name="image"
+                      value={cropForm.image}
+                      onChange={handleInputChange}
+                      placeholder="Or enter emoji (e.g., 🌾)"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                    {uploadingImage && (
+                      <p className="text-sm text-primary-600">Uploading image...</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
