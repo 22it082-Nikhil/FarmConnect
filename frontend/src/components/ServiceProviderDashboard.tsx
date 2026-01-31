@@ -21,6 +21,10 @@ const ServiceProviderDashboard = () => {
   const [jobViewMode, setJobViewMode] = useState<'list' | 'map'>('list') // Toggle state for Jobs
   const [user, setUser] = useState<any>(null)
 
+  // My Bids State
+  const [bidViewMode, setBidViewMode] = useState<'list' | 'map'>('list')
+  const [bidFilter, setBidFilter] = useState<'pending' | 'accepted'>('pending')
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
@@ -903,130 +907,160 @@ const ServiceProviderDashboard = () => {
 
   /* MY BIDS SECTION */
   const renderBids = () => {
-    const activeBids = bids.filter(b => b.status === 'pending')
-    const pastBids = bids.filter(b => b.status !== 'pending')
+    // Filter logic
+    const displayedBids = bids.filter(b =>
+      bidFilter === 'pending' ? b.status === 'pending' : b.status !== 'pending'
+    )
+
+    // For map view, we need to extract the service request location data
+    // Only map bids that have a valid service request with location/coordinates
+    const mapJobs = displayedBids
+      .filter(b => b.serviceRequest)
+      .map(b => ({
+        ...b.serviceRequest,
+        _id: b.serviceRequest._id // JobMap needs _id
+      }))
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white"
+          className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0"
         >
-          <h1 className="text-3xl font-bold mb-2">My Bids & Offers</h1>
-          <p className="text-blue-100 text-lg">Track your submitted quotes and job status</p>
+          <div>
+            <h1 className="text-3xl font-bold mb-2">My Bids & Offers</h1>
+            <p className="text-blue-100 text-lg">Track your submitted quotes and job status</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Filter Tabs */}
+            <div className="flex bg-blue-700/30 rounded-lg p-1">
+              <button
+                onClick={() => setBidFilter('pending')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${bidFilter === 'pending'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-blue-100 hover:bg-blue-600/50'
+                  }`}
+              >
+                Pending
+              </button>
+              <button
+                onClick={() => setBidFilter('accepted')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${bidFilter === 'accepted'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-blue-100 hover:bg-blue-600/50'
+                  }`}
+              >
+                Approved / Past
+              </button>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex bg-white rounded-lg p-1 shadow-sm border border-transparent">
+              <button
+                onClick={() => setBidViewMode('list')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${bidViewMode === 'list'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+              >
+                List
+              </button>
+              <button
+                onClick={() => setBidViewMode('map')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${bidViewMode === 'map'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+              >
+                Map
+              </button>
+            </div>
+          </div>
         </motion.div>
 
-        {/* Active Bids Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center">
-            <span className="bg-yellow-100 text-yellow-800 p-1 rounded-lg mr-2">
-              <Clock className="w-5 h-5" />
-            </span>
-            Active Bids ({activeBids.length})
-          </h2>
-          {activeBids.length === 0 ? (
-            <p className="text-gray-500 italic bg-white p-6 rounded-xl shadow-sm border border-gray-100">No active bids pending.</p>
-          ) : activeBids.map((bid) => (
-            <motion.div
-              key={bid._id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Briefcase className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{bid.serviceRequest?.type || 'Service'} Job</h3>
-                      <p className="text-sm text-gray-600">Posted: {new Date(bid.createdAt).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Your Bid:</span>
-                      <p className="font-medium text-blue-600">{bid.bidAmount}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Budget:</span>
-                      <p className="font-medium">{bid.serviceRequest?.budget || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Status:</span>
-                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        Pending
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Request ID:</span>
-                      <p className="font-medium text-gray-400">#{bid.serviceRequest?._id?.substring(0, 6) || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
+        {bidViewMode === 'map' ? (
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+            {mapJobs.length > 0 ? (
+              <JobMap jobs={mapJobs} />
+            ) : (
+              <div className="h-[400px] w-full bg-gray-50 flex flex-col items-center justify-center text-gray-500">
+                <MapPin className="w-12 h-12 mb-2 opacity-20" />
+                <p>No location data available for these bids.</p>
               </div>
-            </motion.div>
-          ))}
-        </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center">
+              <span className={`p-1 rounded-lg mr-2 ${bidFilter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                {bidFilter === 'pending' ? <Clock className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+              </span>
+              {bidFilter === 'pending' ? 'Active Bids' : 'Bid History'} ({displayedBids.length})
+            </h2>
 
-        {/* Past Bids History Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center mt-8">
-            <span className="bg-blue-100 text-blue-800 p-1 rounded-lg mr-2">
-              <FileText className="w-5 h-5" />
-            </span>
-            Bid History ({pastBids.length})
-          </h2>
-          {pastBids.length === 0 ? (
-            <p className="text-gray-500 italic bg-white p-6 rounded-xl shadow-sm border border-gray-100">No bid history available yet.</p>
-          ) : pastBids.map((bid) => (
-            <motion.div
-              key={bid._id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={`rounded-xl p-6 shadow-md border transition-all duration-300 ${bid.status === 'accepted' ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100 opacity-75'
-                }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${bid.status === 'accepted' ? 'bg-green-100' : 'bg-red-100'}`}>
-                      {bid.status === 'accepted' ? (
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                      ) : (
-                        <Trash2 className="w-6 h-6 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{bid.serviceRequest?.type || 'Service'} Job</h3>
-                      <p className="text-sm text-gray-600">Outcome: <span className="capitalize font-bold">{bid.status}</span></p>
+            {displayedBids.length === 0 ? (
+              <p className="text-gray-500 italic bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                {bidFilter === 'pending' ? 'No active bids pending.' : 'No past bid history found.'}
+              </p>
+            ) : (
+              displayedBids.map((bid) => (
+                <motion.div
+                  key={bid._id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border ${bid.status === 'accepted' ? 'border-green-200 bg-green-50/30' :
+                      bid.status === 'rejected' ? 'border-red-100 bg-gray-50/50' :
+                        'border-gray-100'
+                    }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${bid.status === 'accepted' ? 'bg-green-100' :
+                            bid.status === 'rejected' ? 'bg-red-100' :
+                              'bg-blue-100'
+                          }`}>
+                          {bid.status === 'accepted' ? <CheckCircle className="w-6 h-6 text-green-600" /> :
+                            bid.status === 'rejected' ? <Trash2 className="w-6 h-6 text-red-600" /> :
+                              <Briefcase className="w-6 h-6 text-blue-600" />}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{bid.serviceRequest?.type || 'Service'} Job</h3>
+                          <p className="text-sm text-gray-600">Posted: {new Date(bid.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Your Bid:</span>
+                          <p className={`font-bold ${bid.status === 'accepted' ? 'text-green-700' : 'text-blue-600'}`}>{bid.bidAmount}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Budget:</span>
+                          <p className="font-medium">{bid.serviceRequest?.budget || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Location:</span>
+                          <p className="font-medium truncate max-w-[150px]">{bid.serviceRequest?.location || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Status:</span>
+                          <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              bid.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                            }`}>
+                            {bid.status}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Bid Amount:</span>
-                      <p className="font-medium text-gray-900">{bid.bidAmount}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Date:</span>
-                      <p className="font-medium">{new Date(bid.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-gray-600">Note:</span>
-                      <p className="text-xs text-gray-500">
-                        {bid.status === 'accepted'
-                          ? 'Congratulations! You won this job. Contact the farmer to proceed.'
-                          : 'This bid was not selected. Keep bidding!'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     )
   }
