@@ -23,7 +23,7 @@ const ServiceProviderDashboard = () => {
 
   // My Bids State
   const [bidViewMode, setBidViewMode] = useState<'list' | 'map'>('list')
-  const [bidFilter, setBidFilter] = useState<'pending' | 'accepted'>('pending')
+  const [bidFilter, setBidFilter] = useState<'pending' | 'accepted' | 'rejected'>('pending')
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
@@ -31,6 +31,9 @@ const ServiceProviderDashboard = () => {
       setUser(JSON.parse(storedUser))
     }
   }, [])
+
+  /* ... (omitting unchanged parts for brevity if possible, but replace_file_content needs context) ... */
+  /* actually I will use multi_replace for this to be clean */
 
   const handleSignOut = () => {
     setShowSignOutConfirm(true)
@@ -908,9 +911,7 @@ const ServiceProviderDashboard = () => {
   /* MY BIDS SECTION */
   const renderBids = () => {
     // Filter logic
-    const displayedBids = bids.filter(b =>
-      bidFilter === 'pending' ? b.status === 'pending' : b.status !== 'pending'
-    )
+    const displayedBids = bids.filter(b => bidFilter === 'pending' ? b.status === 'pending' : b.status === bidFilter)
 
     // For map view, we need to extract the service request location data
     // Only map bids that have a valid service request with location/coordinates
@@ -952,7 +953,16 @@ const ServiceProviderDashboard = () => {
                   : 'text-blue-100 hover:bg-blue-600/50'
                   }`}
               >
-                Approved / Past
+                Approved
+              </button>
+              <button
+                onClick={() => setBidFilter('rejected')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${bidFilter === 'rejected'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-blue-100 hover:bg-blue-600/50'
+                  }`}
+              >
+                Rejected
               </button>
             </div>
 
@@ -994,15 +1004,23 @@ const ServiceProviderDashboard = () => {
         ) : (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-800 flex items-center">
-              <span className={`p-1 rounded-lg mr-2 ${bidFilter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                {bidFilter === 'pending' ? <Clock className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+              <span className={`p-1 rounded-lg mr-2 ${bidFilter === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  bidFilter === 'accepted' ? 'bg-green-100 text-green-800' :
+                    'bg-red-100 text-red-800'
+                }`}>
+                {bidFilter === 'pending' ? <Clock className="w-5 h-5" /> :
+                  bidFilter === 'accepted' ? <CheckCircle className="w-5 h-5" /> :
+                    <Trash2 className="w-5 h-5" />
+                }
               </span>
-              {bidFilter === 'pending' ? 'Active Bids' : 'Bid History'} ({displayedBids.length})
+              {bidFilter === 'pending' ? 'Active Bids' : bidFilter === 'accepted' ? 'Approved Bids' : 'Rejected Bids'} ({displayedBids.length})
             </h2>
 
             {displayedBids.length === 0 ? (
               <p className="text-gray-500 italic bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                {bidFilter === 'pending' ? 'No active bids pending.' : 'No past bid history found.'}
+                {bidFilter === 'pending' ? 'No active bids pending.' :
+                  bidFilter === 'accepted' ? 'No approved bids yet.' :
+                    'No rejected bids found.'}
               </p>
             ) : (
               displayedBids.map((bid) => (
@@ -1011,16 +1029,16 @@ const ServiceProviderDashboard = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className={`bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border ${bid.status === 'accepted' ? 'border-green-200 bg-green-50/30' :
-                      bid.status === 'rejected' ? 'border-red-100 bg-gray-50/50' :
-                        'border-gray-100'
+                    bid.status === 'rejected' ? 'border-red-100 bg-gray-50/50' :
+                      'border-gray-100'
                     }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${bid.status === 'accepted' ? 'bg-green-100' :
-                            bid.status === 'rejected' ? 'bg-red-100' :
-                              'bg-blue-100'
+                          bid.status === 'rejected' ? 'bg-red-100' :
+                            'bg-blue-100'
                           }`}>
                           {bid.status === 'accepted' ? <CheckCircle className="w-6 h-6 text-green-600" /> :
                             bid.status === 'rejected' ? <Trash2 className="w-6 h-6 text-red-600" /> :
@@ -1047,8 +1065,8 @@ const ServiceProviderDashboard = () => {
                         <div>
                           <span className="text-gray-600">Status:</span>
                           <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              bid.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                                'bg-red-100 text-red-800'
+                            bid.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                              'bg-red-100 text-red-800'
                             }`}>
                             {bid.status}
                           </span>
