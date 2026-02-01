@@ -2717,20 +2717,19 @@ const FarmerDashboard = () => {
 
     return (
       <div className="space-y-6">
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 text-white"
+          className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 text-white flex justify-between items-center"
         >
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Live Market Prices</h2>
-              <p className="text-green-100 text-sm sm:text-lg">Real-time Mandi rates for key crops</p>
-            </div>
-            <div className="bg-white text-green-700 px-4 py-2 rounded-xl font-bold shadow-lg flex items-center text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              Live Updates
-            </div>
+          <div>
+            <h2 className="text-3xl font-bold mb-2">Live Market Prices</h2>
+            <p className="text-green-100 text-lg">Real-time Mandi rates for key crops</p>
+          </div>
+          <div className="bg-white text-green-700 px-6 py-3 rounded-xl font-bold shadow-lg flex items-center">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+            Live Updates
           </div>
         </motion.div>
 
