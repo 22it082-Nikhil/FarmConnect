@@ -1609,8 +1609,11 @@ const FarmerDashboard = () => {
                     <h3 className="text-xl font-bold text-gray-900">{need.cropName}</h3>
                     <p className="text-sm text-gray-500">Posted: {new Date(need.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${need.status === 'fulfilled' ? 'bg-blue-100 text-blue-800' :
+                      need.status === 'expired' ? 'bg-gray-100 text-gray-800' :
+                        'bg-green-100 text-green-800'
+                    }`}>
+                    {need.status === 'fulfilled' ? 'Completed' : need.status === 'active' ? 'Active' : need.status.charAt(0).toUpperCase() + need.status.slice(1)}
                   </span>
                 </div>
 
@@ -1642,6 +1645,10 @@ const FarmerDashboard = () => {
                         Bid Status: {myBid.status.toUpperCase()}
                       </span>
                       <p className="text-xs text-gray-500 mt-1">You bid: ₹{myBid.pricePerUnit}/{need.unit}</p>
+                    </div>
+                  ) : need.status !== 'active' ? (
+                    <div className="text-center py-2 bg-gray-50 rounded-lg text-gray-500 font-medium border border-gray-100">
+                      Requirement {need.status === 'fulfilled' ? 'Completed' : 'Expired'}
                     </div>
                   ) : (
                     <button

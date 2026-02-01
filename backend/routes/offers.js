@@ -3,6 +3,7 @@ const router = express.Router();
 const Offer = require('../models/Offer');
 
 const Crop = require('../models/Crop');
+const BuyerNeed = require('../models/BuyerNeed');
 const Notification = require('../models/Notification');
 
 // Get all offers for a farmer
@@ -130,13 +131,35 @@ router.put('/:id', async (req, res) => {
         }
 
         // Trigger Notification for Bid Acceptance
-        if (status === 'accepted' && offer.provider) {
-            await Notification.create({
-                recipient: offer.provider,
-                type: 'bid_accepted',
-                message: `Your bid for ${offer.offerType === 'service' ? 'Service' : 'Crop'} has been accepted!`,
-                relatedId: offer._id
-            });
+        if (status === 'accepted') {
+            // Handle Buyer Need Fulfillment
+            if (offer.offerType === 'need_fulfillment' && offer.buyerNeed) {
+                const buyerNeed = await BuyerNeed.findById(offer.buyerNeed);
+                if (buyerNeed) {
+                    // Update Buyer Need status to fulfilled
+                    // In a more complex system, we might check quantities (partial fulfillment), 
+                    // but here we assume full fulfillment for simplicity as per user request ("changed to completed")
+                    buyerNeed.status = 'fulfilled';
+                    await buyerNeed.save();
+                }
+            }
+
+            if (offer.provider) {
+                await Notification.create({
+                    recipient: offer.provider,
+                    type: 'bid_accepted',
+                    message: `Your bid for ${offer.offerType === 'service' ? 'Service' : 'Crop'} has been accepted!`,
+                    relatedId: offer._id
+                });
+            } else if (offer.farmer) {
+                // Notify Farmer for Buyer Need Acceptance
+                await Notification.create({
+                    recipient: offer.farmer,
+                    type: 'bid_accepted',
+                    message: `Your bid for Buyer Requirement has been accepted!`,
+                    relatedId: offer._id
+                });
+            }
         }
 
         res.json(updatedOffer);
