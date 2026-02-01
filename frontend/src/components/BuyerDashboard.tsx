@@ -36,7 +36,9 @@ const BuyerDashboard = () => {
     phone: '',
     location: '',
     organization: '',
-    bio: ''
+    bio: '',
+    latitude: '',
+    longitude: ''
   })
 
   // Update profile form when user data loads
@@ -48,7 +50,9 @@ const BuyerDashboard = () => {
         phone: user.phone || '',
         location: user.location || '',
         organization: user.organization || '',
-        bio: user.bio || ''
+        bio: user.bio || '',
+        latitude: user.latitude || '',
+        longitude: user.longitude || ''
       })
     }
   }, [user])
@@ -1688,6 +1692,65 @@ const BuyerDashboard = () => {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                 />
               </div>
+
+              <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
+                <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                  <MapPin className="w-5 h-5 mr-2 text-orange-500" />
+                  Location Coordinates
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                    <input
+                      type="text"
+                      name="latitude"
+                      value={profileForm.latitude}
+                      onChange={handleProfileInputChange}
+                      placeholder="e.g. 23.0225"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+                    <input
+                      type="text"
+                      name="longitude"
+                      value={profileForm.longitude}
+                      onChange={handleProfileInputChange}
+                      placeholder="e.g. 72.5714"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                    />
+                  </div>
+                </div>
+
+                {/* Map Preview */}
+                <div className="mt-4 rounded-xl overflow-hidden border border-orange-200 shadow-sm relative h-64 bg-gray-100">
+                  {(profileForm.latitude && profileForm.longitude) || profileForm.location ? (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={`https://maps.google.com/maps?q=${profileForm.latitude && profileForm.longitude
+                          ? `${profileForm.latitude},${profileForm.longitude}`
+                          : encodeURIComponent(profileForm.location || 'Gujarat')
+                        }&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                    ></iframe>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                      <MapPin className="w-8 h-8 mb-2 opacity-50" />
+                      <p>Enter coordinates or location to see map</p>
+                    </div>
+                  )}
+
+                  {/* Overlay Badge */}
+                  <div className="absolute bottom-3 right-3 bg-white/90 px-3 py-1 rounded-full text-xs font-medium text-gray-600 shadow-sm border border-gray-100">
+                    {profileForm.latitude && profileForm.longitude ? '📍 Precise Coordinates' : '📍 Approx. Location'}
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end pt-4">
                 <button
                   type="submit"
@@ -1726,6 +1789,33 @@ const BuyerDashboard = () => {
                 <p className="text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-100">
                   {user?.bio || 'No details provided yet.'}
                 </p>
+              </div>
+
+              {/* Read-Only Map View */}
+              <div className="mt-6 border-t border-gray-100 pt-6">
+                <h4 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+                  <MapPin className="w-4 h-4 mr-1" /> Location Map
+                </h4>
+                <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm relative h-64 bg-gray-50">
+                  {(user?.latitude && user?.longitude) || user?.location ? (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={`https://maps.google.com/maps?q=${user.latitude && user.longitude
+                          ? `${user.latitude},${user.longitude}`
+                          : encodeURIComponent(user.location || '')
+                        }&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                    ></iframe>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                      <MapPin className="w-8 h-8 mb-2 opacity-50" />
+                      <p>Location not set</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

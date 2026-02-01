@@ -46,4 +46,28 @@ router.put('/:id/toggle-save', async (req, res) => {
     }
 });
 
+// Update user profile
+router.put('/:id', async (req, res) => {
+    try {
+        const { name, phone, location, organization, bio, latitude, longitude } = req.body;
+        const user = await User.findById(req.params.id);
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Update fields if provided
+        if (name) user.name = name;
+        if (phone) user.phone = phone;
+        if (location) user.location = location;
+        if (organization) user.organization = organization;
+        if (bio) user.bio = bio;
+        if (latitude) user.latitude = latitude;
+        if (longitude) user.longitude = longitude;
+
+        const updatedUser = await user.save();
+        res.json(updatedUser);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;
