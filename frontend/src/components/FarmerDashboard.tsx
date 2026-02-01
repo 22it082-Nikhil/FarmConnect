@@ -8,10 +8,11 @@ import {
   Settings, LogOut, Plus, FileText, Download,
   Bell, Menu, User, TrendingUp, TrendingDown,
   CheckCircle, AlertCircle, Trash,
-  ArrowRight, Cloud, Sun, Warehouse, UserCheck, Home, Shield, Wrench, Star, Clock, Crop, BarChart3
+  ArrowRight, Cloud, Sun, Warehouse, UserCheck, Home, Shield, Wrench, Star, Clock, Crop, BarChart3, Calendar as CalendarIcon
 } from 'lucide-react' // Icon library for consistent UI elements
 import API_URL from '../config'
 import ChatSystem from './ChatSystem'
+import Calendar from './Calendar'
 
 // Main Farmer Dashboard Component - Provides comprehensive interface for crop farmers
 const FarmerDashboard = () => {
@@ -281,8 +282,60 @@ const FarmerDashboard = () => {
       fetchAvailableServices()
       fetchReportData()
       fetchMarketPrices()
+      fetchTasks()
     }
   }, [user])
+
+  // Tasks State
+  const [tasks, setTasks] = useState<any[]>([])
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+  const [taskForm, setTaskForm] = useState({
+    title: '',
+    date: new Date().toISOString().split('T')[0],
+    type: 'general',
+    description: ''
+  })
+
+  const fetchTasks = async () => {
+    if (!user?._id) return
+    try {
+      const res = await fetch(`${API_URL}/api/tasks?userId=${user._id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setTasks(data)
+      }
+    } catch (err) {
+      console.error("Failed to fetch tasks", err)
+    }
+  }
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user?._id) return
+
+    try {
+      const res = await fetch(`${API_URL}/api/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ...taskForm, userId: user._id })
+      })
+
+      if (res.ok) {
+        fetchTasks()
+        setIsTaskModalOpen(false)
+        setTaskForm({
+          title: '',
+          date: new Date().toISOString().split('T')[0],
+          type: 'general',
+          description: ''
+        })
+      }
+    } catch (err) {
+      console.error("Failed to create task", err)
+    }
+  }
 
   // Dashboard statistics data - Key metrics displayed in the overview section
   const dashboardStats = [
@@ -2805,6 +2858,44 @@ const FarmerDashboard = () => {
       </div>
     )
   }
+  const renderCalendar = () => (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 sm:p-8 text-white flex justify-between items-center"
+      >
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Farm Calendar</h2>
+          <p className="text-purple-100 text-sm sm:text-lg">Manage filed work and schedules</p>
+        </div>
+        <button
+          onClick={() => setIsTaskModalOpen(true)}
+          className="bg-white text-purple-600 px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-bold shadow-lg hover:bg-purple-50 transition-all flex items-center text-sm sm:text-base"
+        >
+          <Plus className="w-5 h-5 mr-1 sm:mr-2" />
+          Add Task
+        </button>
+      </motion.div>
+
+      <div className="flex flex-col lg:flex-row gap-6">
+        <Calendar
+          events={tasks.map(t => ({
+            start: new Date(t.date),
+            end: new Date(t.date),
+            title: t.title,
+            type: t.type || 'general',
+            details: t
+          }))}
+          onDateClick={(date) => {
+            setTaskForm(prev => ({ ...prev, date: date.toISOString().split('T')[0] }))
+            // Optional: Open modal on date click
+          }}
+        />
+      </div>
+    </div>
+  )
+
 
   const renderContent = () => {
     switch (activeTab) {
@@ -2814,6 +2905,7 @@ const FarmerDashboard = () => {
       case 'available_services': return renderAvailableServices()
       case 'rentals': return renderRentals()
       case 'market': return renderMarketPrices()
+      case 'calendar': return renderCalendar()
       case 'offers': return renderOffers()
       case 'reports': return renderReports()
       case 'chats': return (
@@ -2894,6 +2986,7 @@ const FarmerDashboard = () => {
                   { id: 'services', name: 'Service Requests', icon: <Truck className="w-5 h-5" /> },
                   { id: 'available_services', name: 'Service Available', icon: <Wrench className="w-5 h-5" /> },
                   { id: 'rentals', name: 'My Rentals', icon: <ShoppingCart className="w-5 h-5" /> },
+                  { id: 'calendar', name: 'Calendar & Tasks', icon: <CalendarIcon className="w-5 h-5" /> },
                   { id: 'market', name: 'Market Prices', icon: <BarChart3 className="w-5 h-5" /> },
                   { id: 'reports', name: 'Reports', icon: <FileText className="w-5 h-5" /> },
                   { id: 'chats', name: 'Messages', icon: <MessageSquare className="w-5 h-5" /> },
@@ -3065,6 +3158,83 @@ const FarmerDashboard = () => {
                 </button>
               </div>
             </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Task Creation Modal */}
+      {isTaskModalOpen && (
+        <div className="fixed inset-0 z-50 bg-gray-600 bg-opacity-75 flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Add New Task</h3>
+              <button onClick={() => setIsTaskModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTask} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                <input
+                  type="text"
+                  required
+                  value={taskForm.title}
+                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g. Add Urea Fertilizer"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={taskForm.date}
+                    onChange={(e) => setTaskForm({ ...taskForm, date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <select
+                    value={taskForm.type}
+                    onChange={(e) => setTaskForm({ ...taskForm, type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="general">General</option>
+                    <option value="field_work">Field Work</option>
+                    <option value="fertilizer">Fertilizer</option>
+                    <option value="harvest">Harvest</option>
+                    <option value="irrigation">Irrigation</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                <textarea
+                  value={taskForm.description}
+                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Additional details..."
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all"
+              >
+                Schedule Task
+              </button>
+            </form>
           </motion.div>
         </div>
       )}

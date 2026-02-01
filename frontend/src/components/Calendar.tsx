@@ -18,7 +18,7 @@ import { ChevronLeft, ChevronRight, Lock, Briefcase, Clock, MapPin, DollarSign }
 export interface CalendarEvent {
     start: Date;
     end: Date;
-    type: 'job' | 'blocked' | 'pending';
+    type: 'job' | 'blocked' | 'pending' | 'field_work' | 'fertilizer' | 'harvest' | 'irrigation' | 'general';
     title?: string;
     id?: string;
     details?: any;
@@ -118,7 +118,14 @@ const Calendar = ({ events, onDateClick, onEventClick }: CalendarProps) => {
                                         key={i}
                                         className={`
                                           h-1.5 md:h-2 rounded-full w-full
-                                          ${evt.type === 'job' ? 'bg-green-500' : evt.type === 'pending' ? 'bg-yellow-400' : 'bg-red-400'}
+                                          ${evt.type === 'job' ? 'bg-green-500' :
+                                                evt.type === 'field_work' ? 'bg-amber-400' :
+                                                    evt.type === 'fertilizer' ? 'bg-purple-400' :
+                                                        evt.type === 'harvest' ? 'bg-orange-400' :
+                                                            evt.type === 'irrigation' ? 'bg-blue-400' :
+                                                                evt.type === 'pending' ? 'bg-yellow-400' :
+                                                                    evt.type === 'general' ? 'bg-gray-400' :
+                                                                        'bg-red-400'}
                                         `}
                                         title={evt.title}
                                     />
@@ -164,21 +171,33 @@ const Calendar = ({ events, onDateClick, onEventClick }: CalendarProps) => {
                                 key={i}
                                 onClick={() => onEventClick && onEventClick(evt)}
                                 className={`
-                                    p-4 rounded-xl border flex items-center justify-between hover:shadow-md transition-all cursor-pointer bg-white
-                                    ${evt.type === 'job'
-                                        ? 'border-green-200 shadow-sm'
-                                        : evt.type === 'pending'
-                                            ? 'border-yellow-200'
-                                            : 'border-red-100 bg-red-50/10'
-                                    }
-                                `}
+                                        p-4 rounded-xl border flex items-center justify-between hover:shadow-md transition-all cursor-pointer bg-white
+                                        ${evt.type === 'job' ? 'border-green-200 shadow-sm' :
+                                        evt.type === 'field_work' ? 'border-amber-200 shadow-sm' :
+                                            evt.type === 'fertilizer' ? 'border-purple-200 shadow-sm' :
+                                                evt.type === 'harvest' ? 'border-orange-200 shadow-sm' :
+                                                    evt.type === 'irrigation' ? 'border-blue-200 shadow-sm' :
+                                                        evt.type === 'pending' ? 'border-yellow-200' :
+                                                            'border-gray-200'}
+                                    `}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`
-                                        w-12 h-12 rounded-lg flex items-center justify-center shrink-0
-                                        ${evt.type === 'job' ? 'bg-green-100 text-green-600' : evt.type === 'pending' ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'}
-                                    `}>
-                                        {evt.type === 'job' ? <Briefcase className="w-6 h-6" /> : evt.type === 'pending' ? <Clock className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+                                            w-12 h-12 rounded-lg flex items-center justify-center shrink-0
+                                            ${evt.type === 'job' ? 'bg-green-100 text-green-600' :
+                                            evt.type === 'field_work' ? 'bg-amber-100 text-amber-600' :
+                                                evt.type === 'fertilizer' ? 'bg-purple-100 text-purple-600' :
+                                                    evt.type === 'harvest' ? 'bg-orange-100 text-orange-600' :
+                                                        evt.type === 'irrigation' ? 'bg-blue-100 text-blue-600' :
+                                                            evt.type === 'pending' ? 'bg-yellow-100 text-yellow-600' :
+                                                                'bg-gray-100 text-gray-600'}
+                                        `}>
+                                        {evt.type === 'job' ? <Briefcase className="w-6 h-6" /> :
+                                            evt.type === 'pending' ? <Clock className="w-6 h-6" /> :
+                                                evt.type === 'harvest' ? <span className="text-xl">🌾</span> :
+                                                    evt.type === 'fertilizer' ? <span className="text-xl">🧪</span> :
+                                                        evt.type === 'irrigation' ? <span className="text-xl">💧</span> :
+                                                            <Lock className="w-6 h-6" />}
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900">{evt.title || 'Untitled Event'}</h4>
@@ -189,14 +208,22 @@ const Calendar = ({ events, onDateClick, onEventClick }: CalendarProps) => {
                                             {evt.details?.bidAmount && (
                                                 <span className="flex items-center gap-1 font-medium text-gray-700"><DollarSign className="w-3 h-3" /> {evt.details.bidAmount}</span>
                                             )}
+                                            {evt.details?.description && (
+                                                <span className="truncate max-w-[200px]">{evt.details.description}</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                                 <div className={`
-                                    px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                    ${evt.type === 'job' ? 'bg-green-100 text-green-700' : evt.type === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}
-                                `}>
-                                    {evt.type === 'job' ? 'Confirmed' : evt.type === 'pending' ? 'Pending' : 'Blocked'}
+                                        px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                                        ${evt.type === 'job' ? 'bg-green-100 text-green-700' :
+                                        ['field_work', 'fertilizer', 'harvest', 'irrigation'].includes(evt.type) ? 'bg-blue-100 text-blue-700' :
+                                            evt.type === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-gray-100 text-gray-700'}
+                                    `}>
+                                    {evt.type === 'job' ? 'Confirmed' :
+                                        ['field_work', 'fertilizer', 'harvest', 'irrigation'].includes(evt.type) ? 'Task' :
+                                            evt.type === 'pending' ? 'Pending' : 'Blocked'}
                                 </div>
                             </div>
                         ))}
