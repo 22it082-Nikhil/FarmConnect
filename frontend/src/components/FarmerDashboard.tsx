@@ -734,12 +734,18 @@ const FarmerDashboard = () => {
 
   const renderAvailableServices = () => (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Service Market</h2>
-          <p className="text-gray-600">Explore services offered by providers in your area</p>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-8 text-white"
+      >
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">Service Market</h2>
+            <p className="text-primary-100 text-lg">Explore services offered by providers in your area</p>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {availableServices.length === 0 ? (
