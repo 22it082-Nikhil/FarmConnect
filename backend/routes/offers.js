@@ -10,15 +10,15 @@ const Notification = require('../models/Notification');
 router.get('/', async (req, res) => {
     try {
         // console.log("GET /api/offers query:", req.query);
-        const { farmerId, providerId, buyerId, status } = req.query;
+        const { farmerId, providerId, buyerId, buyerNeed, status } = req.query;
 
         let query = {};
         if (farmerId && farmerId !== 'dummy') query.farmer = farmerId;
         if (providerId) {
             query.provider = providerId;
-            // console.log("Filtering by provider:", providerId);
         }
         if (buyerId) query.buyer = buyerId;
+        if (buyerNeed) query.buyerNeed = buyerNeed;
         if (status) query.status = status;
 
         console.log("Constructed Query:", query);
@@ -27,6 +27,7 @@ router.get('/', async (req, res) => {
         const offers = await Offer.find(query)
             .populate('crop')
             .populate('serviceRequest')
+            .populate('buyerNeed') // Populate requirement details
             .populate('farmer', 'name email phone') // Populate farmer details
             .populate('provider', 'name email phone') // Populate provider details
             .populate('buyer', 'name email phone') // Populate buyer details
@@ -42,13 +43,14 @@ router.get('/', async (req, res) => {
 // Create a new offer
 router.post('/', async (req, res) => {
     try {
-        const { farmer, provider, buyer, crop, serviceRequest, offerType, buyerName, providerName, pricePerUnit, quantityRequested, bidAmount, message } = req.body;
+        const { farmer, provider, buyer, crop, buyerNeed, serviceRequest, offerType, buyerName, providerName, pricePerUnit, quantityRequested, bidAmount, message } = req.body;
 
         const newOffer = new Offer({
             farmer,
             provider, // Save Provider ID
             buyer,    // Save Buyer ID
             crop: crop || undefined,
+            buyerNeed: buyerNeed || undefined,
             serviceRequest: serviceRequest || undefined,
             offerType: offerType || 'crop',
             buyerName: buyerName || 'Local Buyer',

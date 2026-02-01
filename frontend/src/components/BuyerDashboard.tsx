@@ -8,7 +8,7 @@ import {
   TrendingUp, CheckCircle, Clock, LogOut,
   Search, FileText, Crop,
   Package, Bell, Home, Menu, User, Shield, Heart,
-  MapPin, UserCheck, Trash, MessageSquare, ClipboardList, Plus
+  MapPin, UserCheck, Trash, MessageSquare, ClipboardList, Plus, Edit, Eye
 } from 'lucide-react' // Icon library for consistent UI elements
 import API_URL from '../config'
 import ChatSystem from './ChatSystem'
@@ -102,6 +102,9 @@ const BuyerDashboard = () => {
     deadline: '',
     description: ''
   })
+  const [editingNeedId, setEditingNeedId] = useState<string | null>(null)
+  const [activeNeedOffers, setActiveNeedOffers] = useState<any[]>([])
+  const [isOffersModalOpen, setIsOffersModalOpen] = useState(false)
 
   const fetchBuyerNeeds = async () => {
     if (!user?._id) return
@@ -121,15 +124,22 @@ const BuyerDashboard = () => {
     if (!user?._id) return
 
     try {
-      const res = await fetch(`${API_URL}/api/buyer-needs`, {
-        method: 'POST',
+      const url = editingNeedId
+        ? `${API_URL}/api/buyer-needs/${editingNeedId}`
+        : `${API_URL}/api/buyer-needs`;
+
+      const method = editingNeedId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...needForm, buyer: user._id })
-      })
+      });
 
       if (res.ok) {
-        alert('Requirement Posted Successfully! 📝')
+        alert(editingNeedId ? 'Requirement Updated Successfully! ✅' : 'Requirement Posted Successfully! 📝')
         setIsNeedModalOpen(false)
+        setEditingNeedId(null)
         setNeedForm({
           cropName: '',
           quantity: '',
@@ -141,10 +151,40 @@ const BuyerDashboard = () => {
         })
         fetchBuyerNeeds()
       } else {
-        alert('Failed to post requirement')
+        alert('Failed to save requirement')
       }
     } catch (err) {
       console.error("Error posting need", err)
+    }
+  }
+
+  const handleEditNeed = (need: any) => {
+    setNeedForm({
+      cropName: need.cropName,
+      quantity: need.quantity,
+      unit: need.unit,
+      minPrice: need.minPrice,
+      maxPrice: need.maxPrice,
+      deadline: need.deadline.split('T')[0], // Format date for input
+      description: need.description
+    })
+    setEditingNeedId(need._id)
+    setIsNeedModalOpen(true)
+  }
+
+  const handleViewOffers = async (needId: string) => {
+    try {
+      // Assuming offers route supports filtering by buyerNeed
+      // Note: Backend offer route might need update to support buyerNeed filtering if not already supported via query params generically
+      // Standard way: /api/offers?buyerNeed=ID
+      const res = await fetch(`${API_URL}/api/offers?buyerNeed=${needId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setActiveNeedOffers(data)
+        setIsOffersModalOpen(true)
+      }
+    } catch (err) {
+      console.error("Error fetching offers", err)
     }
   }
 
@@ -712,7 +752,19 @@ const BuyerDashboard = () => {
             <p className="text-orange-100 text-lg">Post what you need and let farmers bid</p>
           </div>
           <button
-            onClick={() => setIsNeedModalOpen(true)}
+            onClick={() => {
+              setEditingNeedId(null);
+              setNeedForm({
+                cropName: '',
+                quantity: '',
+                unit: 'kg',
+                minPrice: '',
+                maxPrice: '',
+                deadline: '',
+                description: ''
+              });
+              setIsNeedModalOpen(true);
+            }}
             className="bg-white text-orange-600 px-6 py-2 rounded-lg font-semibold hover:bg-orange-50 transition-colors inline-flex items-center shadow-lg"
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -768,11 +820,24 @@ const BuyerDashboard = () => {
 
               <div className="flex space-x-2 pt-2 border-t border-gray-100">
                 <button
-                  onClick={() => handleDeleteNeed(need._id)}
-                  className="w-full flex justify-center items-center py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                  onClick={() => handleViewOffers(need._id)}
+                  className="flex-1 flex justify-center items-center py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium border border-blue-100 mr-2"
                 >
-                  <Trash className="w-4 h-4 mr-2" />
-                  Cancel Requirement
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Offers
+                </button>
+                <button
+                  onClick={() => handleEditNeed(need)}
+                  className="flex-1 flex justify-center items-center py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium border border-gray-200 mr-2"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteNeed(need._id)}
+                  className="flex-1 flex justify-center items-center py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium border border-red-100"
+                >
+                  <Trash className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>
@@ -1651,9 +1716,58 @@ const BuyerDashboard = () => {
                 />
               </div>
               <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-lg font-bold hover:bg-orange-700 transition-colors">
-                Post Requirement
+                {editingNeedId ? 'Update Requirement' : 'Post Requirement'}
               </button>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* View Offers Modal */}
+      {isOffersModalOpen && (
+        <div className="fixed inset-0 z-50 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Received Offers 📩</h3>
+              <button onClick={() => setIsOffersModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            {activeNeedOffers.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No offers received yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {activeNeedOffers.map((offer) => (
+                  <div key={offer._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{offer.farmer?.name || 'Farmer'}</h4>
+                        <p className="text-sm text-gray-600">Offered: ₹{offer.pricePerUnit}/{offer.unit || 'kg'}</p>
+                      </div>
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                        ₹{offer.bidAmount} Total
+                      </span>
+                    </div>
+                    {offer.message && (
+                      <p className="text-sm text-gray-500 mt-2 italic">"{offer.message}"</p>
+                    )}
+                    <div className="mt-4 flex space-x-2">
+                      <button className="flex-1 bg-green-600 text-white py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700">Accept</button>
+                      <button
+                        onClick={() => handleStartChat(offer._id)}
+                        className="flex-1 bg-blue-100 text-blue-700 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-200"
+                      >
+                        Chat
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
       )}

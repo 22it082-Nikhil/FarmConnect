@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const offerSchema = new mongoose.Schema({
     offerType: {
         type: String,
-        enum: ['crop', 'service'],
+        enum: ['crop', 'service', 'need_fulfillment'],
         default: 'crop'
     },
     farmer: {
@@ -25,6 +25,11 @@ const offerSchema = new mongoose.Schema({
     crop: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Crop'
+    },
+    // For Buyer Need Fulfillments (Reverse Bidding)
+    buyerNeed: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'BuyerNeed'
     },
     pricePerUnit: {
         type: Number

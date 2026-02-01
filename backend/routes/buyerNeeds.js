@@ -46,6 +46,17 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Update a requirement
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedNeed = await BuyerNeed.findByIdAndUpdate(id, req.body, { new: true });
+        res.json(updatedNeed);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
 // Delete/Cancel a requirement
 router.delete('/:id', async (req, res) => {
     try {
