@@ -49,6 +49,10 @@ app.use('/api/provider-services', require('./routes/providerServices'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/chats', require('./routes/chat'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/tasks', require('./routes/tasks'));
+app.use('/api/market-prices', require('./routes/marketPrices'));
+app.use('/api/buyer-needs', require('./routes/buyerNeeds'));
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/market-prices', require('./routes/marketPrices'));
 app.use('/api/tasks', require('./routes/tasks'));
 

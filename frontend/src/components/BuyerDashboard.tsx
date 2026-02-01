@@ -8,7 +8,7 @@ import {
   TrendingUp, CheckCircle, Clock, LogOut,
   Search, FileText, Crop,
   Package, Bell, Home, Menu, User, Shield, Heart,
-  MapPin, UserCheck, Trash, MessageSquare
+  MapPin, UserCheck, Trash, MessageSquare, ClipboardList, Plus
 } from 'lucide-react' // Icon library for consistent UI elements
 import API_URL from '../config'
 import ChatSystem from './ChatSystem'
@@ -90,6 +90,74 @@ const BuyerDashboard = () => {
     quantityRequested: ''
   })
 
+  // Buyer Needs (Reverse Bidding) State
+  const [buyerNeeds, setBuyerNeeds] = useState<any[]>([])
+  const [isNeedModalOpen, setIsNeedModalOpen] = useState(false)
+  const [needForm, setNeedForm] = useState({
+    cropName: '',
+    quantity: '',
+    unit: 'kg',
+    minPrice: '',
+    maxPrice: '',
+    deadline: '',
+    description: ''
+  })
+
+  const fetchBuyerNeeds = async () => {
+    if (!user?._id) return
+    try {
+      const res = await fetch(`${API_URL}/api/buyer-needs?buyerId=${user._id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setBuyerNeeds(data)
+      }
+    } catch (err) {
+      console.error("Error fetching needs", err)
+    }
+  }
+
+  const handlePostNeed = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user?._id) return
+
+    try {
+      const res = await fetch(`${API_URL}/api/buyer-needs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...needForm, buyer: user._id })
+      })
+
+      if (res.ok) {
+        alert('Requirement Posted Successfully! 📝')
+        setIsNeedModalOpen(false)
+        setNeedForm({
+          cropName: '',
+          quantity: '',
+          unit: 'kg',
+          minPrice: '',
+          maxPrice: '',
+          deadline: '',
+          description: ''
+        })
+        fetchBuyerNeeds()
+      } else {
+        alert('Failed to post requirement')
+      }
+    } catch (err) {
+      console.error("Error posting need", err)
+    }
+  }
+
+  const handleDeleteNeed = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this requirement?')) return
+    try {
+      await fetch(`${API_URL}/api/buyer-needs/${id}`, { method: 'DELETE' })
+      fetchBuyerNeeds()
+    } catch (err) {
+      console.error("Error deleting need", err)
+    }
+  }
+
   // Mock Data (Static) for other sections (keeping as requested to maintain UI)
   // Live Order Data State
   const [myOrders, setMyOrders] = useState<any[]>([])
@@ -119,6 +187,12 @@ const BuyerDashboard = () => {
         fetch(`${API_URL}/api/offers?buyerId=${parsedUser._id}`)
           .then(res => res.json())
           .then(data => setMyOrders(data))
+          .catch(err => console.error(err))
+
+        // Fetch user needs
+        fetch(`${API_URL}/api/buyer-needs?buyerId=${parsedUser._id}`)
+          .then(res => res.json())
+          .then(data => setBuyerNeeds(data))
           .catch(err => console.error(err))
       }
     }
@@ -615,6 +689,90 @@ const BuyerDashboard = () => {
                     }`}
                 >
                   {crop.status === 'sold' ? 'Sold Out' : 'Place Bid'}
+                </button>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+
+  // Renders the Requirements (Reverse Bidding) Section
+  const renderRequirements = () => (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-8 text-white"
+      >
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">My Requirements 📝</h2>
+            <p className="text-orange-100 text-lg">Post what you need and let farmers bid</p>
+          </div>
+          <button
+            onClick={() => setIsNeedModalOpen(true)}
+            className="bg-white text-orange-600 px-6 py-2 rounded-lg font-semibold hover:bg-orange-50 transition-colors inline-flex items-center shadow-lg"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Post New Requirement
+          </button>
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {buyerNeeds.length === 0 ? (
+          <div className="col-span-full text-center py-10 bg-white rounded-xl border border-dashed border-gray-300">
+            <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 mb-2">No active requirements.</p>
+            <button onClick={() => setIsNeedModalOpen(true)} className="text-orange-600 hover:underline">Post your first need</button>
+          </div>
+        ) : (
+          buyerNeeds.map((need) => (
+            <motion.div
+              key={need._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{need.cropName}</h3>
+                  <p className="text-sm text-gray-500">Posted on {new Date(need.createdAt).toLocaleDateString()}</p>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${need.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                  {need.status.toUpperCase()}
+                </span>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Quantity Needed:</span>
+                  <span className="font-medium text-gray-900">{need.quantity} {need.unit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Target Budget:</span>
+                  <span className="font-medium text-green-600">₹{need.minPrice} - ₹{need.maxPrice}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Deadline:</span>
+                  <span className="font-medium text-red-600">{new Date(need.deadline).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                "{need.description || 'No description provided.'}"
+              </p>
+
+              <div className="flex space-x-2 pt-2 border-t border-gray-100">
+                <button
+                  onClick={() => handleDeleteNeed(need._id)}
+                  className="w-full flex justify-center items-center py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Trash className="w-4 h-4 mr-2" />
+                  Cancel Requirement
                 </button>
               </div>
             </motion.div>
@@ -1347,6 +1505,7 @@ const BuyerDashboard = () => {
                 {/* Navigation menu items array with icons and labels */}
                 {[
                   { id: 'overview', name: 'Overview', icon: <Home className="w-5 h-5" /> }, // Dashboard overview
+                  { id: 'requirements', name: 'Post Requirements', icon: <ClipboardList className="w-5 h-5" /> }, // New Req Tab
                   { id: 'crops', name: 'Browse Crops', icon: <Crop className="w-5 h-5" /> }, // Available crops
                   { id: 'orders', name: 'My Orders', icon: <Package className="w-5 h-5" /> }, // Order management
                   { id: 'saved', name: 'Saved Items', icon: <Heart className="w-5 h-5" /> }, // Wishlist
@@ -1383,7 +1542,9 @@ const BuyerDashboard = () => {
 
         <div className="flex-1 lg:ml-0">
           <main className="py-6 px-4 sm:px-6 lg:px-8">
-            {activeTab === 'chats' ? (
+            {activeTab === 'requirements' ? (
+              renderRequirements()
+            ) : activeTab === 'chats' ? (
               <ChatSystem currentUser={{ id: user?._id, name: user?.name }} role="buyer" />
             ) : (
               renderContent()
@@ -1397,6 +1558,104 @@ const BuyerDashboard = () => {
           className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
+      )}
+
+      {/* Post Need Modal */}
+      {isNeedModalOpen && (
+        <div className="fixed inset-0 z-50 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Post New Requirement</h3>
+              <button onClick={() => setIsNeedModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <form onSubmit={handlePostNeed} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Crop Name</label>
+                <input
+                  type="text"
+                  value={needForm.cropName}
+                  onChange={(e) => setNeedForm({ ...needForm, cropName: e.target.value })}
+                  placeholder="e.g. Organic Wheat"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                  <input
+                    type="number"
+                    value={needForm.quantity}
+                    onChange={(e) => setNeedForm({ ...needForm, quantity: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <select
+                    value={needForm.unit}
+                    onChange={(e) => setNeedForm({ ...needForm, unit: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="kg">kg</option>
+                    <option value="tons">tons</option>
+                    <option value="quintals">quintals</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (₹)</label>
+                  <input
+                    type="number"
+                    value={needForm.minPrice}
+                    onChange={(e) => setNeedForm({ ...needForm, minPrice: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Price (₹)</label>
+                  <input
+                    type="number"
+                    value={needForm.maxPrice}
+                    onChange={(e) => setNeedForm({ ...needForm, maxPrice: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                <input
+                  type="date"
+                  value={needForm.deadline}
+                  onChange={(e) => setNeedForm({ ...needForm, deadline: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description / Specifics</label>
+                <textarea
+                  value={needForm.description}
+                  onChange={(e) => setNeedForm({ ...needForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  placeholder="Any specific variety or quality requirements?"
+                />
+              </div>
+              <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-lg font-bold hover:bg-orange-700 transition-colors">
+                Post Requirement
+              </button>
+            </form>
+          </motion.div>
+        </div>
       )}
 
       {/* Sign Out Confirmation Modal */}
