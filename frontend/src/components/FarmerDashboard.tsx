@@ -2667,14 +2667,14 @@ const FarmerDashboard = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 sm:p-8 text-white"
+          className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-6 sm:p-8 text-white"
         >
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold mb-2">Live Market Prices</h2>
-              <p className="text-primary-100 text-sm sm:text-lg">Real-time Mandi rates for key crops</p>
+              <p className="text-green-100 text-sm sm:text-lg">Real-time Mandi rates for key crops</p>
             </div>
-            <div className="bg-white text-primary-600 px-4 py-2 rounded-xl font-bold shadow-lg flex items-center text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
+            <div className="bg-white text-green-700 px-4 py-2 rounded-xl font-bold shadow-lg flex items-center text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
               Live Updates
             </div>
@@ -2757,7 +2757,7 @@ const FarmerDashboard = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Crop</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Market</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price / Unit</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Last Updated</th>
@@ -2774,11 +2774,13 @@ const FarmerDashboard = () => {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{item.crop}</div>
-                            <div className="text-xs text-gray-500 sm:hidden">{new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                            <div className="text-xs text-gray-500 sm:hidden">
+                              {item.market.split(' ')[0]} {/* Show partial market name on mobile if needed, or just time */}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                         <div className="text-sm text-gray-900">{item.market}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
