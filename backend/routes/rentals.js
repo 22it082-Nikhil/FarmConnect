@@ -9,7 +9,15 @@ const Rental = require('../models/Rental');
 router.get('/', async (req, res) => {
     const { farmerId } = req.query;
     try {
-        const rentals = await Rental.find({ farmer: farmerId }).sort({ createdAt: -1 });
+        let query = {};
+        if (farmerId) {
+            query.farmer = farmerId;
+        }
+
+        const rentals = await Rental.find(query)
+            .populate('farmer', 'name phone') // Populate farmer details
+            .sort({ createdAt: -1 });
+
         res.json(rentals);
     } catch (err) {
         console.error(err.message);
