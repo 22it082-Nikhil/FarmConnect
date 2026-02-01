@@ -955,7 +955,7 @@ const BuyerDashboard = () => {
                       <Package className="w-5 h-5 text-orange-600" /> {/* Package icon for order */}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{order.crop?.name || 'Unknown Crop'} Order</h3> {/* Order title with crop name */}
+                      <h3 className="font-semibold text-gray-900">{order.crop?.name || order.buyerNeed?.cropName || 'Custom'} Order</h3> {/* Order title with crop name */}
                       <p className="text-sm text-gray-600">Farmer: {order.farmer?.name || 'Unknown Farmer'}</p> {/* Farmer name */}
                     </div>
                   </div>
@@ -963,11 +963,13 @@ const BuyerDashboard = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Quantity:</span> {/* Quantity label */}
-                      <p className="font-medium">{order.quantityRequested} {order.crop?.unit || 'units'}</p> {/* Ordered quantity */}
+                      <p className="font-medium">{order.quantityRequested} {order.crop?.unit || order.buyerNeed?.unit || 'units'}</p> {/* Ordered quantity */}
                     </div>
                     <div>
                       <span className="text-gray-600">Bid Amount:</span> {/* Total price label */}
-                      <p className="font-medium text-green-600">{order.bidAmount}</p> {/* Order total cost */}
+                      <p className="font-medium text-green-600">
+                        {order.bidAmount?.toString().startsWith('₹') ? order.bidAmount : `₹${order.bidAmount}`}
+                      </p> {/* Order total cost */}
                     </div>
                     <div>
                       <span className="text-gray-600">Status:</span> {/* Status label */}
@@ -2179,9 +2181,11 @@ const BuyerDashboard = () => {
                     width="100%"
                     height="200"
                     style={{ border: 0 }}
-                    loading="lazy"
                     allowFullScreen
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(selectedOrder.farmer?.location || 'Gujarat, India')}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                    src={`https://maps.google.com/maps?q=${selectedOrder.farmer?.latitude && selectedOrder.farmer?.longitude
+                      ? `${selectedOrder.farmer.latitude},${selectedOrder.farmer.longitude}`
+                      : encodeURIComponent(selectedOrder.farmer?.location || 'Gujarat, India')
+                      }&t=&z=14&ie=UTF8&iwloc=&output=embed`}
                   ></iframe>
                   <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs text-gray-500 shadow-sm z-20">
                     📍 {selectedOrder.farmer?.location || 'Gujarat, India'}
