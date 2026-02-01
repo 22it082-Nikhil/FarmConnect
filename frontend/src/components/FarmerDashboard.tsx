@@ -99,11 +99,37 @@ const FarmerDashboard = () => {
 
   const fetchAvailableServices = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/provider-services`)
-      if (res.ok) {
-        const data = await res.json()
-        setAvailableServices(data)
+      const [servicesRes, rentalsRes] = await Promise.all([
+        fetch(`${API_URL}/api/provider-services`),
+        fetch(`${API_URL}/api/rentals`)
+      ])
+
+      let mergedData: any[] = []
+
+      if (servicesRes.ok) {
+        const services = await servicesRes.json()
+        mergedData = [...mergedData, ...services.map((s: any) => ({ ...s, category: 'Service' }))]
       }
+
+      if (rentalsRes.ok) {
+        const rentals = await rentalsRes.json()
+        // Filter out my own rentals if needed, or show all. User asked for "farmers List New Equipment then it should also show"
+        // We will show all available rentals.
+        mergedData = [...mergedData, ...rentals.filter((r: any) => r.status === 'available').map((r: any) => ({
+          _id: r._id,
+          title: r.name,
+          description: r.description,
+          type: r.type,
+          rate: r.pricePerHour,
+          image: r.image,
+          availability: r.status,
+          contactPhone: r.farmer?.phone || 'Contact Farmer', // Assuming populating farmer
+          provider: { name: r.farmer?.name || 'Fellow Farmer' }, // Mapping farmer to provider visual
+          category: 'Rental Equipment'
+        }))]
+      }
+
+      setAvailableServices(mergedData)
     } catch (err) {
       console.error("Failed to fetch available services", err)
     }
@@ -720,9 +746,23 @@ const FarmerDashboard = () => {
                     {service.provider?.name || 'Service Provider'}
                   </span>
                 </div>
-                <div className="text-4xl mb-2">{service.image || '🛠️'}</div>
+
+                {/* Image Display Logic */}
+                <div className="h-40 w-full mb-4 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                  {service.image && service.image.startsWith('data:image') ? (
+                    <img src={service.image} alt={service.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-6xl">{service.image || '🛠️'}</span>
+                  )}
+                </div>
+
                 <h3 className="text-lg font-semibold text-gray-900">{service.title}</h3>
-                <p className="text-sm text-gray-600">{service.description}</p>
+                <div className="flex justify-center mt-1 mb-2">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${service.category === 'Rental Equipment' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                    {service.category || 'Service'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 line-clamp-2">{service.description}</p>
               </div>
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
