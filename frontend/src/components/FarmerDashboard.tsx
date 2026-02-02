@@ -107,10 +107,20 @@ const FarmerDashboard = () => {
     setBillData(sale)
     setPrintMode('bill')
     setShowSaleDetailModal(false)
+
+    // Reset print mode after print dialog closes
+    const afterPrintHandler = () => {
+      setPrintMode('none')
+      window.removeEventListener('afterprint', afterPrintHandler)
+    }
+
+    window.addEventListener('afterprint', afterPrintHandler)
+
     setTimeout(() => {
       window.print()
     }, 500)
   }
+
 
 
   // Dynamic Crop State
