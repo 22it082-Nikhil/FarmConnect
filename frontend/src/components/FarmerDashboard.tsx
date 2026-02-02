@@ -3035,14 +3035,14 @@ const FarmerDashboard = () => {
                 <div className="flex-grow p-2">
                   <p className="font-bold uppercase mb-1">{billData.crop?.name || 'Crop'} - Sale</p>
                   <div className="ml-4 text-xs mt-2 space-y-0.5">
-                    <p><span className="font-semibold">Quantity:</span> {billData.quantityRequested || billData.crop?.quantity || 'N/A'}</p>
+                    <p><span className="font-semibold">Quantity:</span> {billData.quantityRequested || billData.crop?.quantity || 'N/A'} Kg</p>
                     {billData.pricePerUnit && (
                       <p><span className="font-semibold">Price per Unit:</span> ₹{billData.pricePerUnit}</p>
                     )}
                     <p><span className="font-semibold">Sale Date:</span> {new Date(billData.updatedAt || billData.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="w-24 p-2 text-right">{billData.pricePerUnit || billData.bidAmount}</div>
+                <div className="w-24 p-2 text-right">₹{billData.pricePerUnit || billData.bidAmount}</div>
                 <div className="w-32 p-2 text-right font-bold">{billData.bidAmount}</div>
               </div>
             </div>
