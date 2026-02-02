@@ -1761,6 +1761,31 @@ const ServiceProviderDashboard = () => {
                               : (bid.serviceRequest?.budget ? `₹${bid.serviceRequest.budget}` : 'N/A')}
                           </p>
                         </div>
+
+                        {/* New Fields for Duration and Dates */}
+                        {(bid.serviceBroadcast || bid.serviceRequest) && (
+                          <>
+                            <div>
+                              <p className="text-sm text-gray-500 mb-1 font-medium">Duration:</p>
+                              <p className="font-bold text-gray-900">
+                                {bid.offerType === 'broadcast_bid' ? bid.serviceBroadcast?.duration : bid.serviceRequest?.duration || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500 mb-1 font-medium">Start Date:</p>
+                              <p className="font-bold text-gray-900">
+                                {new Date(bid.offerType === 'broadcast_bid' ? bid.serviceBroadcast?.availabilityDate : bid.serviceRequest?.scheduledDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500 mb-1 font-medium">End Date:</p>
+                              <p className="font-bold text-gray-900">
+                                {bid.offerType === 'broadcast_bid' && bid.serviceBroadcast?.endDate ? new Date(bid.serviceBroadcast.endDate).toLocaleDateString() :
+                                  bid.serviceRequest?.endDate ? new Date(bid.serviceRequest.endDate).toLocaleDateString() : 'N/A'}
+                              </p>
+                            </div>
+                          </>
+                        )}
                         <div>
                           <p className="text-sm text-gray-500 mb-1 font-medium">Status:</p>
                           <span className={`font-bold capitalize ${bid.status === 'accepted' ? 'text-green-600' :

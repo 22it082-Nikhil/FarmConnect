@@ -29,6 +29,7 @@ router.get('/', async (req, res) => {
         const offers = await Offer.find(query)
             .populate('crop')
             .populate('serviceRequest')
+            .populate('serviceBroadcast')
             .populate({
                 path: 'buyerNeed',
                 populate: { path: 'buyer', select: 'name email phone' }
