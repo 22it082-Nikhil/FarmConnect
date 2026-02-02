@@ -99,6 +99,19 @@ const FarmerDashboard = () => {
     setShowSaleDetailModal(true)
   }
 
+  // Print Mode State for Bill Generation
+  const [printMode, setPrintMode] = useState<'none' | 'bill'>('none')
+  const [billData, setBillData] = useState<any>(null)
+
+  const handleGenerateBill = (sale: any) => {
+    setBillData(sale)
+    setPrintMode('bill')
+    setShowSaleDetailModal(false)
+    setTimeout(() => {
+      window.print()
+    }, 500)
+  }
+
 
   // Dynamic Crop State
   const [crops, setCrops] = useState<any[]>([])
@@ -2907,6 +2920,171 @@ const FarmerDashboard = () => {
   )
 
 
+  /* Render Crop Sale Bill / Invoice */
+  const renderCropSaleBill = () => {
+    if (!billData) return null
+
+    const invoiceDate = new Date().toLocaleDateString()
+
+    // Farmer Details (Bill From - Seller)
+    const sellerName = user?.name || 'Farmer'
+    const sellerAddress = user?.location || 'Address Not Provided'
+    const sellerPhone = user?.phone || ''
+
+    // Buyer Details (Bill To)
+    const buyerName = billData.serviceProvider?.name || billData.buyer?.name || 'Valued Buyer'
+    const buyerAddress = billData.serviceProvider?.location || billData.buyer?.location || ''
+    const buyerPhone = billData.serviceProvider?.phone || billData.buyer?.phone || ''
+
+    return (
+      <div className="hidden print:block bg-white text-black font-serif max-w-[210mm] mx-auto p-4 h-screen box-border">
+        {/* Main Outer Border (Rounded Corners as per Cash Memo) */}
+        <div className="border-2 border-black rounded-3xl h-[95vh] flex flex-col relative overflow-hidden">
+
+          {/* Header Section */}
+          <div className="flex p-4 border-b-2 border-black">
+            {/* Logo (Left) */}
+            <div className="w-24 h-24 border-2 border-black rounded-full flex items-center justify-center mr-6 shrink-0 overflow-hidden">
+              <img src="/logo.png" alt="FarmConnect" className="w-full h-full object-contain p-1" />
+            </div>
+
+            {/* Company Details (Center) */}
+            <div className="flex-grow text-center">
+              <h4 className="font-bold text-sm uppercase tracking-wide mb-1">Sale Invoice / Cash Memo</h4>
+              <h1 className="font-bold text-3xl uppercase mb-2">FarmConnect</h1>
+              <p className="text-sm px-8 leading-tight">Connecting Farmers & Buyers</p>
+              <p className="text-sm font-bold mt-1">Platform for Agricultural Trade</p>
+            </div>
+
+            {/* Right Side Meta (Bill No, Date) */}
+            <div className="text-right w-48 text-sm shrink-0 flex flex-col justify-between">
+              <div>
+                <p><span className="font-bold">Invoice No:</span> {billData._id.slice(-6).toUpperCase()}</p>
+              </div>
+              <div>
+                <span className="font-bold mr-2">Date:</span> {invoiceDate}
+              </div>
+            </div>
+          </div>
+
+          {/* From Section (Seller - Farmer) */}
+          <div className="border-b-2 border-black p-2 flex items-start">
+            <span className="font-bold mt-1 mr-2 text-lg">From:</span>
+            <div className="flex-grow">
+              <div className="border-b border-black border-dotted mb-1 pb-1 font-bold text-lg min-h-[30px] flex items-end">
+                {sellerName}
+              </div>
+              <div className="border-b border-black border-dotted mb-1 pb-1 text-sm min-h-[24px] flex items-end">
+                {sellerAddress}
+              </div>
+              <div className="border-b border-black border-dotted pb-1 text-sm min-h-[24px] flex items-end">
+                Phone: {sellerPhone}
+              </div>
+            </div>
+          </div>
+
+          {/* To Section (Buyer) */}
+          <div className="border-b-2 border-black p-2 flex items-start">
+            <span className="font-bold mt-1 mr-2 text-lg">To:</span>
+            <div className="flex-grow">
+              <div className="border-b border-black border-dotted mb-1 pb-1 font-bold text-lg min-h-[30px] flex items-end">
+                {buyerName}
+              </div>
+              <div className="border-b border-black border-dotted mb-1 pb-1 text-sm min-h-[24px] flex items-end">
+                {buyerAddress}
+              </div>
+              <div className="border-b border-black border-dotted pb-1 text-sm min-h-[24px] flex items-end">
+                Phone: {buyerPhone}
+              </div>
+            </div>
+          </div>
+
+          {/* Crop / Transaction Info Line */}
+          <div className="border-b-2 border-black flex text-sm">
+            <div className="w-1/2 border-r-2 border-black p-1 px-2">
+              <span className="font-bold">Crop Type:</span> {billData.crop?.name || 'Agricultural Produce'}
+            </div>
+            <div className="w-1/2 p-1 px-2">
+              <span className="font-bold">Transaction ID:</span> #{billData._id.slice(-4)}
+            </div>
+          </div>
+
+          {/* Main Table Headers */}
+          <div className="flex border-b-2 border-black font-bold text-center text-sm bg-gray-50">
+            <div className="w-16 border-r-2 border-black p-2">SL.No</div>
+            <div className="flex-grow border-r-2 border-black p-2">PARTICULARS</div>
+            <div className="w-24 border-r-2 border-black p-2">RATE</div>
+            <div className="w-32 p-2">AMOUNT</div>
+          </div>
+
+          {/* Table Body (Full Height) */}
+          <div className="flex-grow flex relative">
+            {/* Vertical Lines Overlay */}
+            <div className="absolute inset-0 flex pointer-events-none">
+              <div className="w-16 border-r-2 border-black h-full"></div>
+              <div className="flex-grow border-r-2 border-black h-full"></div>
+              <div className="w-24 border-r-2 border-black h-full"></div>
+              <div className="w-32 h-full"></div>
+            </div>
+
+            {/* Content Rows */}
+            <div className="w-full z-10 text-sm">
+              {/* Row 1: Crop Sale */}
+              <div className="flex">
+                <div className="w-16 p-2 text-center">1</div>
+                <div className="flex-grow p-2">
+                  <p className="font-bold uppercase mb-1">{billData.crop?.name || 'Crop'} - Sale</p>
+                  <div className="ml-4 text-xs mt-2 space-y-0.5">
+                    <p><span className="font-semibold">Quantity:</span> {billData.quantityRequested || billData.crop?.quantity || 'N/A'}</p>
+                    {billData.pricePerUnit && (
+                      <p><span className="font-semibold">Price per Unit:</span> ₹{billData.pricePerUnit}</p>
+                    )}
+                    <p><span className="font-semibold">Sale Date:</span> {new Date(billData.updatedAt || billData.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="w-24 p-2 text-right">{billData.pricePerUnit || billData.bidAmount}</div>
+                <div className="w-32 p-2 text-right font-bold">{billData.bidAmount}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Section */}
+          <div className="border-t-2 border-black flex font-bold text-sm">
+            <div className="flex-grow p-2 border-r-2 border-black text-right uppercase pr-4 flex items-center justify-end">
+              Total Amount
+            </div>
+            <div className="w-32 p-2 text-right text-lg">
+              {billData.bidAmount}
+            </div>
+          </div>
+
+          {/* Amount in Words */}
+          <div className="border-t-2 border-black p-2 text-sm border-b-2 border-black flex">
+            <span className="font-bold mr-2 whitespace-nowrap">Amount in Words:</span>
+            <span className="italic underline decoration-dotted flex-grow">Rupees {billData.bidAmount} Only</span>
+          </div>
+
+          {/* Footer / Signatory */}
+          <div className="h-40 p-4 pt-2 flex justify-between items-end">
+            <div className="text-xs max-w-sm">
+              <p className="font-bold underline mb-1">Terms and Conditions:</p>
+              <ol className="list-decimal pl-4 space-y-0.5">
+                <li>Goods once sold will not be refunded.</li>
+                <li>Payment must be made as per agreed terms.</li>
+                <li>Subject to local jurisdiction.</li>
+              </ol>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold mb-10">For {sellerName}</p>
+              <p className="text-xs uppercase border-t border-black pt-1 px-4">Authorized Signatory</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    )
+  }
+
   /* New: Render Offers Section */
   const renderOffers = () => (
     <div className="space-y-6">
@@ -3226,6 +3404,9 @@ const FarmerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Render Bill when in print mode */}
+      {printMode === 'bill' && renderCropSaleBill()}
+
       <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -3456,7 +3637,7 @@ const FarmerDashboard = () => {
       )}
 
       {/* Sale Detail Modal */}
-      {showSaleDetailModal && selectedSaleDetail && (
+      {showSaleDetailModal && selectedSaleDetail && printMode === 'none' && (
         <div className="fixed inset-0 z-50 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -3588,14 +3769,11 @@ const FarmerDashboard = () => {
                 Close
               </button>
               <button
-                onClick={() => {
-                  setShowSaleDetailModal(false)
-                  handleStartChat(selectedSaleDetail._id)
-                }}
+                onClick={() => handleGenerateBill(selectedSaleDetail)}
                 className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center"
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Chat with Buyer
+                <FileText className="w-4 h-4 mr-2" />
+                Bill Now
               </button>
             </div>
           </motion.div>
