@@ -1298,7 +1298,7 @@ const ServiceProviderDashboard = () => {
                         </div>
                         <div>
                           <span className="text-gray-600">Location:</span>
-                          <p className="font-medium truncate max-w-[150px]">{bid.serviceRequest?.location || 'Unknown'}</p>
+                          <p className="font-medium">{bid.serviceRequest?.location || 'Unknown'}</p>
                         </div>
                         <div>
                           <span className="text-gray-600">Status:</span>
