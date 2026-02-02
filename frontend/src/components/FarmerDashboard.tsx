@@ -1774,7 +1774,7 @@ const FarmerDashboard = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Price:</span>
-                <span className="font-medium text-green-600">{crop.price}</span>
+                <span className="font-medium text-green-600">{crop.price.includes('₹') ? crop.price : `₹${crop.price}/kg`}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Status:</span>
@@ -1853,8 +1853,15 @@ const FarmerDashboard = () => {
                     type="text"
                     name="price"
                     value={cropForm.price}
-                    onChange={handleInputChange}
-                    placeholder="e.g. ₹1.20/kg"
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Extract only numbers and decimal point
+                      const numericValue = value.replace(/[^0-9.]/g, '')
+                      // Format as ₹{number}/kg if there's a value
+                      const formattedValue = numericValue ? `₹${numericValue}/kg` : ''
+                      setCropForm({ ...cropForm, price: formattedValue })
+                    }}
+                    placeholder="Enter price (e.g. 50)"
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     required
                   />
@@ -2001,7 +2008,7 @@ const FarmerDashboard = () => {
                     ) : (
                       <>
                         <span className="text-gray-500 text-xs uppercase font-bold tracking-wider block">Budget</span>
-                        <p className="font-bold text-gray-900">{service.budget || 'N/A'}</p>
+                        <p className="font-bold text-gray-900">{service.budget ? `₹${service.budget}` : 'N/A'}</p>
                       </>
                     )}
                   </div>
