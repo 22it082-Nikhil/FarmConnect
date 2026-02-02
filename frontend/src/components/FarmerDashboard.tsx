@@ -55,6 +55,9 @@ const FarmerDashboard = () => {
 
   // Broadcasts State (Reverse Bidding)
   const [activeBroadcasts, setActiveBroadcasts] = useState<any[]>([])
+  const [selectedBroadcast, setSelectedBroadcast] = useState<any>(null)
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false)
+  const [bidAmount, setBidAmount] = useState('')
 
   const fetchActiveBroadcasts = async () => {
     try {
@@ -65,6 +68,42 @@ const FarmerDashboard = () => {
       }
     } catch (err) {
       console.error("Error fetching active broadcasts", err)
+    }
+  }
+
+  const handlePlaceBid = (broadcast: any) => {
+    setSelectedBroadcast(broadcast)
+    setBidAmount('')
+    setIsBidModalOpen(true)
+  }
+
+  const handleBroadcastBidSubmit = async (e: any) => {
+    e.preventDefault()
+    if (!user?._id || !selectedBroadcast) return
+
+    try {
+      const res = await fetch(`${API_URL}/api/offers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          offerType: 'broadcast_bid',
+          farmer: user._id,
+          provider: selectedBroadcast.provider._id,
+          serviceBroadcast: selectedBroadcast._id,
+          bidAmount: `₹${bidAmount}`,
+          status: 'pending',
+          message: `Bid placed for ${selectedBroadcast.title}`
+        })
+      })
+
+      if (res.ok) {
+        alert('Bid placed successfully!')
+        setIsBidModalOpen(false)
+      } else {
+        alert('Failed to place bid')
+      }
+    } catch (err) {
+      console.error("Error placing bid", err)
     }
   }
 
@@ -144,16 +183,62 @@ const FarmerDashboard = () => {
               </div>
 
               <button
-                onClick={() => alert(`Contact ${broadcast.provider?.name}: ${broadcast.provider?.phone}`)}
+                onClick={() => handlePlaceBid(broadcast)}
                 className="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition flex items-center justify-center"
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Contact Provider
+                <IndianRupee className="w-4 h-4 mr-2" />
+                Place Bid
               </button>
             </motion.div>
           ))
         )}
       </div>
+
+      {isBidModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Place Bid for {selectedBroadcast?.title}</h3>
+                  <button onClick={() => setIsBidModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                    <Settings className="w-6 h-6 rotate-45" />
+                  </button>
+                </div>
+                <form onSubmit={handleBroadcastBidSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Target Rate (₹) {selectedBroadcast?.budget}</label>
+                    <div className="mt-1 relative rounded-md shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">₹</span>
+                      </div>
+                      <input
+                        type="number"
+                        required
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        className="focus:ring-teal-500 focus:border-teal-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md py-2"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">Enter the amount you are willing to pay.</p>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-teal-600 text-white p-3 rounded-lg font-bold hover:bg-teal-700 transition"
+                  >
+                    Submit Bid
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 

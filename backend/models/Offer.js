@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const offerSchema = new mongoose.Schema({
     offerType: {
         type: String,
-        enum: ['crop', 'service', 'need_fulfillment'],
+        enum: ['crop', 'service', 'need_fulfillment', 'broadcast_bid'],
         default: 'crop'
     },
     farmer: {
@@ -30,6 +30,11 @@ const offerSchema = new mongoose.Schema({
     buyerNeed: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'BuyerNeed'
+    },
+    // For Service Broadcast Bids (Provider -> Farmer)
+    serviceBroadcast: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ServiceBroadcast'
     },
     pricePerUnit: {
         type: Number

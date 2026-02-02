@@ -8,7 +8,7 @@ import {
   TrendingUp, CheckCircle, Clock, Star, Settings, LogOut,
   FileText, Download, Plus, Search, MapPin,
   Bell, Home, Menu, User, MessageSquare,
-  Briefcase, Wrench, IndianRupee, Trash2, Award, Calendar as CalendarIcon, X, Eye
+  Briefcase, Wrench, IndianRupee, Trash2, Award, Calendar as CalendarIcon, X, Eye, ArrowLeft, ArrowRight
 } from 'lucide-react' // Icon library for consistent UI elements
 import API_URL from '../config'
 import ChatSystem from './ChatSystem'
@@ -100,6 +100,8 @@ const ServiceProviderDashboard = () => {
   // Broadcasts State
   const [broadcasts, setBroadcasts] = useState<any[]>([])
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false)
+  const [viewingBidsForBroadcast, setViewingBidsForBroadcast] = useState<string | null>(null)
+  const [broadcastBids, setBroadcastBids] = useState<any[]>([])
   const [broadcastForm, setBroadcastForm] = useState({
     title: '',
     type: 'Vehicle',
@@ -121,6 +123,42 @@ const ServiceProviderDashboard = () => {
       }
     } catch (err) {
       console.error("Error fetching broadcasts", err)
+    }
+  }
+
+  const fetchBroadcastBids = async (broadcastId: string) => {
+    try {
+      // Fetch all offers linked to this broadcast
+      const res = await fetch(`${API_URL}/api/offers?serviceBroadcast=${broadcastId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setBroadcastBids(data)
+      }
+    } catch (err) {
+      console.error("Error fetching broadcast bids", err)
+    }
+  }
+
+  const handleViewBids = (broadcastId: string) => {
+    setViewingBidsForBroadcast(broadcastId)
+    fetchBroadcastBids(broadcastId)
+  }
+
+  const handleUpdateBidStatus = async (bidId: string, status: 'accepted' | 'rejected') => {
+    try {
+      const res = await fetch(`${API_URL}/api/offers/${bidId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      if (res.ok) {
+        alert(`Bid ${status} successfully`)
+        if (viewingBidsForBroadcast) {
+          fetchBroadcastBids(viewingBidsForBroadcast)
+        }
+      }
+    } catch (err) {
+      console.error(`Error updating bid status`, err)
     }
   }
 
@@ -198,64 +236,128 @@ const ServiceProviderDashboard = () => {
         </button>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {broadcasts.length === 0 ? (
-          <div className="col-span-full text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
-            <Truck className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No active broadcasts. Post one to get bids!</p>
-          </div>
-        ) : (
-          broadcasts.map((broadcast) => (
-            <motion.div
-              key={broadcast._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all"
+      {/* If Viewing Bids for a specific Broadcast */}
+      {viewingBidsForBroadcast ? (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <h3 className="font-bold text-lg text-gray-800">
+              Bids for Broadcast
+            </h3>
+            <button
+              onClick={() => setViewingBidsForBroadcast(null)}
+              className="text-gray-500 hover:text-gray-700 font-medium flex items-center"
             >
-              <div className="flex justify-between items-start mb-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to List
+            </button>
+          </div>
+          <div className="p-4">
+            {broadcastBids.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No bids received yet.</div>
+            ) : (
+              <div className="space-y-4">
+                {broadcastBids.map(bid => (
+                  <div key={bid._id} className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-50">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-bold text-gray-900">{bid.farmer?.name || 'Farmer'}</h4>
+                        <span className={`px-2 py-0.5 text-xs rounded-full font-bold uppercase ${bid.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                          bid.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>{bid.status}</span>
+                      </div>
+                      <p className="text-sm text-gray-600">Offered: <span className="font-bold text-green-600">{bid.bidAmount}</span></p>
+                      <p className="text-xs text-gray-500">{new Date(bid.createdAt).toLocaleDateString()}</p>
+                    </div>
+
+                    {bid.status === 'pending' && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleUpdateBidStatus(bid._id, 'accepted')}
+                          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => handleUpdateBidStatus(bid._id, 'rejected')}
+                          className="px-3 py-1 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {broadcasts.length === 0 ? (
+            <div className="col-span-full text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+              <Truck className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">No active broadcasts. Post one to get bids!</p>
+            </div>
+          ) : (
+            broadcasts.map((broadcast) => (
+              <motion.div
+                key={broadcast._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all flex flex-col"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
                   ${broadcast.type === 'Vehicle' ? 'bg-blue-100 text-blue-800' :
-                    broadcast.type === 'Manpower' ? 'bg-purple-100 text-purple-800' :
-                      'bg-orange-100 text-orange-800'}`}>
-                  {broadcast.type}
-                </span>
-                <span className={`px-2 py-1 rounded-md text-xs font-medium border
+                      broadcast.type === 'Manpower' ? 'bg-purple-100 text-purple-800' :
+                        'bg-orange-100 text-orange-800'}`}>
+                    {broadcast.type}
+                  </span>
+                  <span className={`px-2 py-1 rounded-md text-xs font-medium border
                   ${broadcast.status === 'active' ? 'border-green-200 text-green-700 bg-green-50' : 'border-gray-200 text-gray-600'}`}>
-                  {broadcast.status.toUpperCase()}
-                </span>
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{broadcast.title}</h3>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{broadcast.description}</p>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                  {broadcast.location}
+                    {broadcast.status.toUpperCase()}
+                  </span>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <CalendarIcon className="w-4 h-4 mr-2 text-gray-400" />
-                  {new Date(broadcast.availabilityDate).toLocaleDateString()}
-                </div>
-                <div className="flex items-center text-sm font-bold text-green-600">
-                  <IndianRupee className="w-4 h-4 mr-2" />
-                  {broadcast.budget} (Budget)
-                </div>
-              </div>
 
-              <div className="pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                <button
-                  onClick={() => handleDeleteBroadcast(broadcast._id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete Broadcast"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{broadcast.title}</h3>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{broadcast.description}</p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                    {broadcast.location}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <CalendarIcon className="w-4 h-4 mr-2 text-gray-400" />
+                    {new Date(broadcast.availabilityDate).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center text-sm font-bold text-green-600">
+                    <IndianRupee className="w-4 h-4 mr-2" />
+                    {broadcast.budget} (Budget)
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 flex justify-between items-center mt-auto">
+                  <button
+                    onClick={() => handleViewBids(broadcast._id)}
+                    className="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center"
+                  >
+                    View Bids <ArrowRight className="w-4 h-4 ml-1" />
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteBroadcast(broadcast._id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Broadcast"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      )}
 
       {isBroadcastModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
