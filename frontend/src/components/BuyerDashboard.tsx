@@ -807,11 +807,11 @@ const BuyerDashboard = () => {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Quantity:</span> {/* Quantity label */}
-                  <span className="font-medium">{crop.quantity}</span> {/* Available quantity */}
+                  <span className="font-medium">{crop.quantity} Kg</span> {/* Available quantity */}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Price:</span> {/* Price label */}
-                  <span className="font-medium text-green-600">{crop.price}</span> {/* Price per kg */}
+                  <span className="font-medium text-green-600">{crop.price.toString().includes('₹') ? crop.price : `₹${crop.price}/kg`}</span> {/* Price per kg */}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span> {/* Status label */}
@@ -1010,7 +1010,7 @@ const BuyerDashboard = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Quantity:</span> {/* Quantity label */}
-                      <p className="font-medium">{order.quantityRequested} {order.crop?.unit || order.buyerNeed?.unit || 'units'}</p> {/* Ordered quantity */}
+                      <p className="font-medium">{order.quantityRequested} {order.crop?.unit || order.buyerNeed?.unit || 'Kg'}</p> {/* Ordered quantity */}
                     </div>
                     <div>
                       <span className="text-gray-600">Bid Amount:</span> {/* Total price label */}
@@ -1133,7 +1133,7 @@ const BuyerDashboard = () => {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Price:</span> {/* Price label */}
-                  <span className="font-medium text-green-600">{crop.price}</span> {/* Current price */}
+                  <span className="font-medium text-green-600">{crop.price.toString().includes('₹') ? crop.price : `₹${crop.price}/kg`}</span> {/* Current price */}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span> {/* Saved date label */}
