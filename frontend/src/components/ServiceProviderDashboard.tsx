@@ -144,7 +144,7 @@ const ServiceProviderDashboard = () => {
 
   const handleUpdateBidStatus = async (bidId: string, status: 'accepted' | 'rejected') => {
     try {
-      const res = await fetch(`${API_URL}/api/offers/${bidId}/status`, {
+      const res = await fetch(`${API_URL}/api/offers/${bidId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -1641,8 +1641,8 @@ const ServiceProviderDashboard = () => {
                       {/* Header */}
                       <div className="flex items-center gap-4 mb-6">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${(bid.offerType === 'broadcast_bid' ? bid.serviceBroadcast?.type : bid.serviceRequest?.type) === 'Vehicle' ? 'bg-blue-50 text-blue-600' :
-                            (bid.offerType === 'broadcast_bid' ? bid.serviceBroadcast?.type : bid.serviceRequest?.type) === 'Manpower' ? 'bg-orange-50 text-orange-600' :
-                              'bg-green-50 text-green-600'
+                          (bid.offerType === 'broadcast_bid' ? bid.serviceBroadcast?.type : bid.serviceRequest?.type) === 'Manpower' ? 'bg-orange-50 text-orange-600' :
+                            'bg-green-50 text-green-600'
                           }`}>
                           {(bid.offerType === 'broadcast_bid' ? bid.serviceBroadcast?.type : bid.serviceRequest?.type) === 'Vehicle' ? <Truck className="w-6 h-6" /> :
                             (bid.offerType === 'broadcast_bid' ? bid.serviceBroadcast?.type : bid.serviceRequest?.type) === 'Manpower' ? <Users className="w-6 h-6" /> :
