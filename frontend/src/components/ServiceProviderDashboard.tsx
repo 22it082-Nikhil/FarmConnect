@@ -1265,66 +1265,63 @@ const ServiceProviderDashboard = () => {
               displayedBids.map((bid) => (
                 <motion.div
                   key={bid._id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border ${bid.status === 'accepted' ? 'border-green-200 bg-green-50/30' :
-                    bid.status === 'rejected' ? 'border-red-100 bg-gray-50/50' :
-                      'border-gray-100'
-                    }`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex justify-between items-start">
+                    {/* Left Side: Content */}
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bid.status === 'accepted' ? 'bg-green-100' :
-                            bid.status === 'rejected' ? 'bg-red-100' :
-                              'bg-blue-100'
-                            }`}>
-                            {bid.status === 'accepted' ? <CheckCircle className="w-6 h-6 text-green-600" /> :
-                              bid.status === 'rejected' ? <Trash2 className="w-6 h-6 text-red-600" /> :
-                                <Briefcase className="w-6 h-6 text-blue-600" />}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-lg text-gray-900">{bid.serviceRequest?.type || 'Service'} Job</h3>
-                            <p className="text-sm text-gray-500 flex items-center mt-1">
-                              <Clock className="w-3 h-3 mr-1" />
-                              Posted {new Date(bid.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
+                      {/* Header */}
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bid.serviceRequest?.type === 'Vehicle' ? 'bg-blue-50 text-blue-600' :
+                            bid.serviceRequest?.type === 'Manpower' ? 'bg-orange-50 text-orange-600' :
+                              'bg-green-50 text-green-600'
+                          }`}>
+                          {bid.serviceRequest?.type === 'Vehicle' ? <Truck className="w-6 h-6" /> :
+                            bid.serviceRequest?.type === 'Manpower' ? <Users className="w-6 h-6" /> :
+                              <Briefcase className="w-6 h-6" />}
                         </div>
-                        <button
-                          onClick={() => setSelectedBidForDetail(bid)}
-                          className="flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all text-sm font-medium shadow-sm"
-                        >
-                          <Eye className="w-4 h-4 mr-2 text-blue-500" />
-                          View Details
-                        </button>
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-lg">{bid.serviceRequest?.type || 'Service'} Request</h3>
+                          <p className="text-gray-500 text-sm font-medium">{bid.farmer?.name || 'Unknown Farmer'}</p>
+                        </div>
                       </div>
 
-                      {/* Grid Layout for Key Info */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
+                      {/* Info Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         <div>
-                          <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-1">Your Bid</span>
-                          <p className={`text-lg font-bold ${bid.status === 'accepted' ? 'text-green-700' : 'text-blue-600'}`}>{bid.bidAmount}</p>
+                          <p className="text-sm text-gray-500 mb-1 font-medium">Your Bid:</p>
+                          <p className="font-bold text-blue-600">{bid.bidAmount}</p>
                         </div>
                         <div>
-                          <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-1">Farmer Budget</span>
-                          <p className="text-lg font-medium text-gray-700">{bid.serviceRequest?.budget || 'N/A'}</p>
+                          <p className="text-sm text-gray-500 mb-1 font-medium">Location:</p>
+                          <p className="font-bold text-gray-900 truncate max-w-[180px]">{bid.serviceRequest?.location || 'Unknown'}</p>
                         </div>
                         <div>
-                          <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-1">Location</span>
-                          <p className="text-sm font-medium text-gray-700">{bid.serviceRequest?.location || 'Unknown'}</p>
+                          <p className="text-sm text-gray-500 mb-1 font-medium">Budget:</p>
+                          <p className="font-bold text-green-600">{bid.serviceRequest?.budget || 'N/A'}</p>
                         </div>
                         <div>
-                          <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-1">Status</span>
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold uppercase tracking-wide rounded-full ${bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            bid.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                              'bg-red-100 text-red-800'
+                          <p className="text-sm text-gray-500 mb-1 font-medium">Status:</p>
+                          <span className={`font-bold capitalize ${bid.status === 'accepted' ? 'text-green-600' :
+                              bid.status === 'rejected' ? 'text-red-500' :
+                                'text-yellow-600'
                             }`}>
                             {bid.status}
                           </span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Right Side: Actions */}
+                    <div className="ml-6 flex flex-col gap-3">
+                      <button
+                        onClick={() => setSelectedBidForDetail(bid)}
+                        className="px-6 py-2 bg-white border border-green-500 text-green-600 rounded-lg hover:bg-green-50 transition-colors text-sm font-bold shadow-sm whitespace-nowrap"
+                      >
+                        View Details
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -2299,7 +2296,7 @@ const ServiceProviderDashboard = () => {
                   <div className="text-center p-3 rounded-lg bg-gray-50">
                     <span className="block text-xs text-gray-500 font-bold uppercase">Status</span>
                     <span className={`block text-lg font-bold uppercase ${selectedBidForDetail.status === 'accepted' ? 'text-green-600' :
-                        selectedBidForDetail.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                      selectedBidForDetail.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
                       }`}>
                       {selectedBidForDetail.status}
                     </span>
