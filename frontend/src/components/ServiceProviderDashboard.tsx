@@ -1346,92 +1346,186 @@ const ServiceProviderDashboard = () => {
   }
 
   // Handle Invoice Generation
-  const generateInvoice = (bid: any) => {
-    setInvoiceData(bid)
-    setPrintMode('invoice')
-    setTimeout(() => {
-      window.print()
-    }, 100)
+  const generateInvoice = async (bid: any) => {
+    try {
+      // 1. Fetch Farmer Details from Backend to get Phone, Email, Full Address
+      let farmerDetails = null;
+      if (bid.farmer?._id) {
+        const res = await fetch(`${API_URL}/users/${bid.farmer._id}`);
+        if (res.ok) {
+          farmerDetails = await res.json();
+        }
+      }
+
+      // 2. Prepare Enriched Invoice Data
+      const enrichedData = {
+        ...bid,
+        farmer: {
+          ...bid.farmer,
+          ...farmerDetails // Merge fetched details (phone, distinct location if any)
+        }
+      };
+
+      setInvoiceData(enrichedData);
+      setPrintMode('invoice');
+
+      // Wait for state update and images to load before printing
+      setTimeout(() => {
+        window.print()
+      }, 500)
+
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      alert("Could not fetch full invoice details. Printing available data.");
+      // Fallback
+      setInvoiceData(bid);
+      setPrintMode('invoice');
+      setTimeout(() => {
+        window.print()
+      }, 500)
+    }
   }
 
   // Define Printable Invoice Content
   const renderInvoice = () => {
     if (!invoiceData) return null;
+
+    const invoiceDate = new Date().toLocaleDateString();
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7); // 7 Days due date
+
     return (
-      <div className="hidden print:block p-8 bg-white text-black font-serif max-w-4xl mx-auto">
-        {/* Invoice Header */}
-        <div className="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 uppercase tracking-widest">Invoice</h1>
-            <p className="text-gray-600 mt-2">Invoice #: INV-{invoiceData._id.slice(-6).toUpperCase()}</p>
-            <p className="text-gray-600">Date: {new Date().toLocaleDateString()}</p>
-          </div>
-          <div className="text-right">
-            <h2 className="text-2xl font-bold text-blue-800">FarmConnect Service</h2>
-            <p className="text-gray-600 text-sm mt-1">Reliable Agricultural Services</p>
-          </div>
-        </div>
+      <div className="hidden print:block bg-white text-black font-sans max-w-[210mm] mx-auto p-8 h-screen">
+        {/* Invoice Container with Border */}
+        <div className="border-2 border-gray-900 h-full flex flex-col">
 
-        {/* Bill To / Bill From */}
-        <div className="flex justify-between mb-10">
-          <div>
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Bill From:</h3>
-            <p className="font-bold text-lg text-gray-900">{user?.name || 'Service Provider'}</p>
-            <p className="text-gray-700">{user?.email}</p>
-            <p className="text-gray-700">{user?.phone || 'Phone Not Available'}</p>
-          </div>
-          <div className="text-right">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Bill To:</h3>
-            <p className="font-bold text-lg text-gray-900">{invoiceData.farmer?.name || 'Valued Farmer'}</p>
-            <p className="text-gray-700">ID: #{invoiceData.farmer?._id?.slice(-4)}</p>
-            <p className="text-gray-700 whitespace-pre-wrap max-w-xs ml-auto">{invoiceData.serviceRequest?.location || 'Location Not Provided'}</p>
-          </div>
-        </div>
-
-        {/* Line Items */}
-        <table className="w-full mb-8">
-          <thead>
-            <tr className="bg-gray-100 border-b border-gray-300">
-              <th className="text-left py-3 px-4 font-bold text-gray-700 uppercase text-sm">Description</th>
-              <th className="text-right py-3 px-4 font-bold text-gray-700 uppercase text-sm">Rate/Budget</th>
-              <th className="text-right py-3 px-4 font-bold text-gray-700 uppercase text-sm">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-gray-200">
-              <td className="py-4 px-4">
-                <p className="font-bold text-gray-900">{invoiceData.serviceRequest?.type || 'Service'} Job</p>
-                <p className="text-sm text-gray-600 mt-1">{invoiceData.serviceRequest?.description}</p>
-                <p className="text-xs text-gray-500 mt-1">Duration: {invoiceData.serviceRequest?.duration || 'Standard'}</p>
-              </td>
-              <td className="py-4 px-4 text-right text-gray-700">{invoiceData.serviceRequest?.budget || 'N/A'}</td>
-              <td className="py-4 px-4 text-right font-bold text-gray-900">{invoiceData.bidAmount}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Total Section */}
-        <div className="flex justify-end mb-12">
-          <div className="w-1/2 border-t-2 border-gray-800 pt-4">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600 font-medium">Subtotal</span>
-              <span className="font-bold text-gray-900">{invoiceData.bidAmount}</span>
+          {/* Header Section */}
+          <div className="flex justify-between items-center p-6 border-b-2 border-gray-900 bg-gray-50">
+            <div>
+              <h1 className="text-4xl font-bold uppercase tracking-widest text-gray-900">Tax Invoice</h1>
+              <p className="text-sm text-gray-600 mt-1">Original for Recipient</p>
             </div>
-            <div className="flex justify-between mb-4">
-              <span className="text-gray-600 font-medium">Tax (0%)</span>
-              <span className="font-bold text-gray-900">₹0</span>
-            </div>
-            <div className="flex justify-between text-xl border-t border-gray-300 pt-4">
-              <span className="font-bold text-gray-900">Total Due</span>
-              <span className="font-bold text-blue-700">{invoiceData.bidAmount}</span>
+            <div className="text-right">
+              <h2 className="text-2xl font-bold text-blue-900">FarmConnect</h2>
+              <p className="font-medium">Service Marketplace</p>
+              <p className="text-sm text-gray-500">Connecting Farmers & Providers</p>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 pt-8 text-center text-gray-500 text-sm">
-          <p>Thank you for choosing FarmConnect services. Please process the payment within 7 days.</p>
-          <p className="mt-1">For questions, contact support@farmconnect.com</p>
+          {/* Meta Data Row (Grid) */}
+          <div className="grid grid-cols-2 border-b-2 border-gray-900">
+            <div className="p-4 border-r-2 border-gray-900">
+              <p className="text-xs font-bold text-gray-500 uppercase">Invoice Number</p>
+              <p className="font-bold text-lg">INV-{invoiceData._id.slice(-6).toUpperCase()}</p>
+            </div>
+            <div className="p-4 flex justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase">Issue Date</p>
+                <p className="font-bold text-lg">{invoiceDate}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-bold text-gray-500 uppercase">Due Date</p>
+                <p className="font-bold text-lg">{dueDate.toLocaleDateString()}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Addresses Row */}
+          <div className="grid grid-cols-2 border-b-2 border-gray-900">
+            {/* Bill From (Provider) */}
+            <div className="p-6 border-r-2 border-gray-900">
+              <h3 className="text-sm font-bold text-blue-800 uppercase mb-3 underline">Billed By (Service Provider)</h3>
+              <p className="font-bold text-xl text-gray-900">{user?.name || 'Service Provider'}</p>
+              <p className="text-gray-700 mt-1"><span className="font-semibold">Phone:</span> {user?.phone || 'N/A'}</p>
+              <p className="text-gray-700"><span className="font-semibold">Email:</span> {user?.email || 'N/A'}</p>
+              <p className="text-gray-700 mt-2 max-w-xs">{user?.location || 'Location not specified in profile'}</p>
+            </div>
+
+            {/* Bill To (Farmer) */}
+            <div className="p-6">
+              <h3 className="text-sm font-bold text-green-800 uppercase mb-3 underline">Billed To (Farmer)</h3>
+              <p className="font-bold text-xl text-gray-900">{invoiceData.farmer?.name || 'Valued Farmer'}</p>
+              <p className="text-gray-700 mt-1"><span className="font-semibold">Phone:</span> {invoiceData.farmer?.phone || 'N/A'}</p>
+              <p className="text-gray-700"><span className="font-semibold">Email:</span> {invoiceData.farmer?.email || 'N/A'}</p>
+              <p className="text-gray-700 mt-2 max-w-xs">
+                <span className="font-semibold">Site Location:</span><br />
+                {invoiceData.serviceRequest?.location || invoiceData.farmer?.location || 'Location Not Provided'}
+              </p>
+            </div>
+          </div>
+
+          {/* Line Items Table */}
+          <div className="flex-grow">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-100 border-b-2 border-gray-900 text-sm font-bold text-gray-700 uppercase">
+                  <th className="p-4 text-left border-r border-gray-900 w-16">#</th>
+                  <th className="p-4 text-left border-r border-gray-900">Service Description</th>
+                  <th className="p-4 text-center border-r border-gray-900">Duration</th>
+                  <th className="p-4 text-right border-r border-gray-900">Budget</th>
+                  <th className="p-4 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-900">
+                  <td className="p-4 border-r border-gray-900 align-top">1</td>
+                  <td className="p-4 border-r border-gray-900 align-top">
+                    <p className="font-bold text-gray-900">{invoiceData.serviceRequest?.type || 'General'} Service</p>
+                    <p className="text-gray-600 mt-1 text-sm">{invoiceData.serviceRequest?.description || 'No description provided.'}</p>
+                  </td>
+                  <td className="p-4 border-r border-gray-900 align-top text-center text-gray-700">
+                    {invoiceData.serviceRequest?.duration || 'Fixed'}
+                  </td>
+                  <td className="p-4 border-r border-gray-900 align-top text-right text-gray-600">
+                    {invoiceData.serviceRequest?.budget || '-'}
+                  </td>
+                  <td className="p-4 align-top text-right font-bold text-gray-900">
+                    {invoiceData.bidAmount}
+                  </td>
+                </tr>
+                {/* Empty filler rows for layout height if needed */}
+                {[1, 2, 3].map(i => (
+                  <tr key={i} className="border-b border-gray-200">
+                    <td className="p-4 border-r border-gray-900">&nbsp;</td>
+                    <td className="p-4 border-r border-gray-900">&nbsp;</td>
+                    <td className="p-4 border-r border-gray-900">&nbsp;</td>
+                    <td className="p-4 border-r border-gray-900">&nbsp;</td>
+                    <td className="p-4">&nbsp;</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals Section */}
+          <div className="flex border-t-2 border-gray-900">
+            <div className="flex-grow p-6 border-r-2 border-gray-900 bg-gray-50">
+              <h4 className="font-bold text-sm uppercase mb-2">Terms & Conditions</h4>
+              <ul className="text-xs text-gray-600 list-disc pl-4 space-y-1">
+                <li>Payment is due within 7 days of invoice date.</li>
+                <li>Please quote Invoice ID in all transfers.</li>
+                <li>This is a computer generated invoice.</li>
+              </ul>
+              <div className="mt-8 pt-8 border-t border-gray-400 w-48">
+                <p className="text-xs font-bold text-gray-500 uppercase">Authorized Signature</p>
+              </div>
+            </div>
+            <div className="w-1/3">
+              <div className="flex justify-between p-3 border-b border-gray-900">
+                <span className="font-medium text-gray-600">Subtotal</span>
+                <span className="font-bold">{invoiceData.bidAmount}</span>
+              </div>
+              <div className="flex justify-between p-3 border-b border-gray-900">
+                <span className="font-medium text-gray-600">Tax (0%)</span>
+                <span className="font-bold">₹0.00</span>
+              </div>
+              <div className="flex justify-between p-4 bg-gray-100">
+                <span className="font-bold text-lg text-gray-900">Grand Total</span>
+                <span className="font-bold text-xl text-blue-700">{invoiceData.bidAmount}</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     )
