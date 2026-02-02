@@ -99,6 +99,7 @@ const FarmerDashboard = () => {
       if (res.ok) {
         alert('Bid placed successfully!')
         setIsBidModalOpen(false)
+        fetchMyBids() // Refresh bids to update UI state
       } else {
         alert('Failed to place bid')
       }
@@ -138,52 +139,74 @@ const FarmerDashboard = () => {
             <p className="text-gray-500 text-lg">No service broadcasts active at the moment.</p>
           </div>
         ) : (
-          activeBroadcasts.map((broadcast) => (
-            <motion.div
-              key={broadcast._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">{broadcast.title}</h3>
-                  <p className="text-sm text-gray-500">Posted: {new Date(broadcast.createdAt).toLocaleDateString()}</p>
-                </div>
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {broadcast.type}
-                </span>
-              </div>
+          activeBroadcasts.map((broadcast) => {
+            // Check if I have already placed a bid on this broadcast
+            const myBid = myBids.find(b =>
+              b.offerType === 'broadcast_bid' &&
+              b.serviceBroadcast &&
+              (b.serviceBroadcast._id === broadcast._id || b.serviceBroadcast === broadcast._id)
+            );
+            const hasBid = !!myBid;
 
-              <div className="space-y-3 mb-6 flex-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Location:</span>
-                  <span className="font-medium text-gray-900">{broadcast.location}</span>
+            return (
+              <motion.div
+                key={broadcast._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{broadcast.title}</h3>
+                    <p className="text-sm text-gray-500">Posted: {new Date(broadcast.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {broadcast.type}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Rate:</span>
-                  <span className="font-medium text-green-600">₹{broadcast.budget}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Available:</span>
-                  <span className="font-medium text-red-600">{new Date(broadcast.availabilityDate).toLocaleDateString()}</span>
-                </div>
-                {broadcast.description && (
-                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded italic">"{broadcast.description}"</p>
-                )}
-              </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => handlePlaceBid(broadcast)}
-                  className="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition-colors flex items-center justify-center"
-                >
-                  <IndianRupee className="w-4 h-4 mr-2" />
-                  Place Bid
-                </button>
-              </div>
-            </motion.div>
-          ))
+                <div className="space-y-3 mb-6 flex-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Location:</span>
+                    <span className="font-medium text-gray-900">{broadcast.location}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rate:</span>
+                    <span className="font-medium text-green-600">₹{broadcast.budget}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Available:</span>
+                    <span className="font-medium text-red-600">{new Date(broadcast.availabilityDate).toLocaleDateString()}</span>
+                  </div>
+                  {broadcast.description && (
+                    <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded italic">"{broadcast.description}"</p>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  {hasBid ? (
+                    <div className="text-center">
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${myBid.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                        myBid.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        Bid Status: {myBid.status.toUpperCase()}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">You bid: {myBid.bidAmount}</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handlePlaceBid(broadcast)}
+                      className="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition-colors flex items-center justify-center"
+                    >
+                      <IndianRupee className="w-4 h-4 mr-2" />
+                      Place Bid
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )
+          })
         )}
       </div>
 
@@ -1755,7 +1778,7 @@ const FarmerDashboard = () => {
       const res = await fetch(`${API_URL}/api/offers?farmerId=${user._id}`)
       if (res.ok) {
         const data = await res.json()
-        setMyBids(data.filter((o: any) => o.buyerNeed)) // Only need bids
+        setMyBids(data.filter((o: any) => o.buyerNeed || o.serviceBroadcast || o.offerType === 'broadcast_bid'))
       }
     } catch (err) {
       console.error("Error fetching my bids", err)
