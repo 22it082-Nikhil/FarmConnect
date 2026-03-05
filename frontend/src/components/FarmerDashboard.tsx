@@ -1975,7 +1975,11 @@ const FarmerDashboard = () => {
             <div className="space-y-2 mb-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">Quantity:</span>
-                <span className="font-medium">{crop.quantity} Kg</span>
+                <span className="font-medium">
+                  {typeof crop.quantity === 'string' && /kg/i.test(crop.quantity)
+                    ? crop.quantity
+                    : `${crop.quantity} Kg`}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Price:</span>
