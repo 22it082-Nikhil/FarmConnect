@@ -500,8 +500,8 @@ const FarmerDashboard = () => {
             // I sold a crop OR fulfilled a buyer need -> Income
             totalIncome += amount
             saleTransactions.push(offer)
-          } else if (offer.offerType === 'service') {
-            // I requested a service -> Expense
+          } else if (offer.offerType === 'service' || offer.offerType === 'broadcast_bid') {
+            // I requested a service or accepted a Service Broadcast bid -> Expense
             totalExpenses += amount
             expenseTransactions.push(offer)
           }
