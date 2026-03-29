@@ -138,6 +138,15 @@ router.put('/:id', async (req, res) => {
 
         // Trigger Notification for Bid Acceptance
         if (status === 'accepted') {
+            // Mutual Exclusivity: Automatically reject all other competing pending offers for the same Service Request
+            if (offer.serviceRequest) {
+                const updated = await Offer.updateMany(
+                    { serviceRequest: offer.serviceRequest, _id: { $ne: offer._id }, status: 'pending' },
+                    { $set: { status: 'rejected' } }
+                );
+                console.log(`[Service Request] Auto-rejected ${updated.modifiedCount} competing offers for request ${offer.serviceRequest}`);
+            }
+
             // Handle Buyer Need Fulfillment
             if (offer.offerType === 'need_fulfillment' && offer.buyerNeed) {
                 const buyerNeed = await BuyerNeed.findById(offer.buyerNeed);
