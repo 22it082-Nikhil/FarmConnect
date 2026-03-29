@@ -862,9 +862,15 @@ const ServiceProviderDashboard = () => {
   const handleSubmitBid = async (job: any) => {
     const rawBudget = job.budget ? job.budget.replace(/[^0-9]/g, '') : ''
     // Pre-fill with budget number
-    const bidAmountInput = prompt(`Enter your bid amount for this job (Budget: ₹${rawBudget || 'N/A'}):`, rawBudget)
+    let bidAmountInput = prompt(`Enter your bid amount for this job (Budget: ₹${rawBudget || 'N/A'}):`, rawBudget)
 
     if (!bidAmountInput) return
+
+    // Strict Validation: Only numbers are allowed (no alphabets, special characters, spaces, or decimals)
+    while (/[^0-9]/.test(bidAmountInput.trim())) {
+      bidAmountInput = prompt(`Invalid input! Only numbers are allowed.\n\nEnter your bid amount for this job (Budget: ₹${rawBudget || 'N/A'}):`, rawBudget);
+      if (!bidAmountInput) return; // Allow user to cancel
+    }
 
     // Ensure currency symbol
     const bidAmount = bidAmountInput.trim().startsWith('₹') ? bidAmountInput.trim() : `₹${bidAmountInput.trim()}`
