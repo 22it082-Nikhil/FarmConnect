@@ -1,6 +1,6 @@
 // Import required libraries and components
 import { useEffect, useRef, useState } from 'react'
-import { motion, useScroll, useSpring, useTransform, useVelocity } from 'framer-motion' // For smooth animations and transitions
+import { motion, useScroll, useSpring, useTransform, useVelocity, AnimatePresence } from 'framer-motion' // For smooth animations and transitions
 import {
   // Navigation and UI icons for homepage
   Leaf,
@@ -8,11 +8,14 @@ import {
   Users,
   ShoppingCart,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  X
 } from 'lucide-react' // Icon library for consistent UI elements
 
 // Main HomePage Component - Landing page for the agricultural marketplace platform
 const HomePage = () => {
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
+
   // ===== Scroll-based hero animation setup =====
   const TOTAL_FRAMES = 240
   const FRAME_PATH = '/frames'
@@ -263,7 +266,7 @@ const HomePage = () => {
                 Explore Modules
                 <ArrowRight className="w-5 h-5 ml-2 inline" />
               </a>
-              <button className="btn-outline text-lg px-8 py-4">
+              <button onClick={() => setIsVideoModalOpen(true)} className="btn-outline text-lg px-8 py-4">
                 Watch Demo
               </button>
             </motion.div>
@@ -348,7 +351,7 @@ const HomePage = () => {
                       Explore Modules
                       <ArrowRight className="w-5 h-5 ml-2 inline" />
                     </a>
-                    <button className="btn-outline text-lg px-8 py-4">
+                    <button onClick={() => setIsVideoModalOpen(true)} className="btn-outline text-lg px-8 py-4">
                       Watch Demo
                     </button>
                   </div>
@@ -567,6 +570,49 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Video Modal Overlay */}
+      <AnimatePresence>
+        {isVideoModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6"
+            onClick={() => setIsVideoModalOpen(false)}
+          >
+            {/* Close instruction for clarity */}
+            <div className="absolute top-6 text-white/70 text-sm font-medium tracking-wider pointer-events-none">
+              Click anywhere outside to close
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10"
+              onClick={(e) => e.stopPropagation()} // Prevent external click from closing when clicking exactly on the player
+            >
+              <button
+                onClick={() => setIsVideoModalOpen(false)}
+                className="absolute top-4 right-4 z-[110] p-2 bg-black/40 hover:bg-black/80 text-white rounded-full transition-all duration-300 backdrop-blur-md border border-white/10 flex items-center justify-center group"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              </button>
+
+              <iframe
+                src="https://drive.google.com/file/d/1Rodr5vqVUf2FLXdw4Dj1aISRmDoHdTYn/preview"
+                className="w-full h-full border-0 rounded-2xl"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                title="FarmConnect Product Demo"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
