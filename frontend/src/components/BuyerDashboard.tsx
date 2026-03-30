@@ -807,7 +807,7 @@ const BuyerDashboard = () => {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Quantity:</span> {/* Quantity label */}
-                  <span className="font-medium">{crop.quantity} Kg</span> {/* Available quantity */}
+                  <span className="font-medium">{crop.quantity}</span> {/* Available quantity */}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Price:</span> {/* Price label */}
